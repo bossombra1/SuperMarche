@@ -897,6 +897,9 @@ class Sales extends Secure_Controller
                 } elseif ($data['sale_id_num'] === INSUFFICIENT_REWARD_POINTS) {
                     $data['error_message'] = lang('Sales.insufficient_reward_points');
                     return $this->reload($data);
+                } elseif ($data['sale_id_num'] === INSUFFICIENT_STOCK) {
+                    $data['error_message'] = lang('Sales.item_insufficient_of_stock');
+                    return $this->reload($data);
                 } elseif ($data['sale_id_num'] == NEW_ENTRY) {
                     $data['error_message'] = lang('Sales.transaction_failed');
                     return $this->reload($data);
@@ -937,6 +940,9 @@ class Sales extends Secure_Controller
                 } elseif ($data['sale_id_num'] === INSUFFICIENT_REWARD_POINTS) {
                     $data['error_message'] = lang('Sales.insufficient_reward_points');
                     return $this->reload($data);
+                } elseif ($data['sale_id_num'] === INSUFFICIENT_STOCK) {
+                    $data['error_message'] = lang('Sales.item_insufficient_of_stock');
+                    return $this->reload($data);
                 } elseif ($data['sale_id_num'] == NEW_ENTRY) {
                     $data['error_message'] = lang('Sales.transaction_failed');
                     return $this->reload($data);
@@ -976,6 +982,9 @@ class Sales extends Secure_Controller
                     return $this->reload($data);
                 } elseif ($data['sale_id_num'] === INSUFFICIENT_REWARD_POINTS) {
                     $data['error_message'] = lang('Sales.insufficient_reward_points');
+                    return $this->reload($data);
+                } elseif ($data['sale_id_num'] === INSUFFICIENT_STOCK) {
+                    $data['error_message'] = lang('Sales.item_insufficient_of_stock');
                     return $this->reload($data);
                 } elseif ($data['sale_id_num'] == NEW_ENTRY) {
                     $data['error_message'] = lang('Sales.transaction_failed');
@@ -1789,6 +1798,8 @@ class Sales extends Secure_Controller
             $data['error'] = lang('Sales.insufficient_giftcard_balance');
         } elseif ($saleIdNum === INSUFFICIENT_REWARD_POINTS) {
             $data['error'] = lang('Sales.insufficient_reward_points');
+        } elseif ($saleIdNum === INSUFFICIENT_STOCK) {
+            $data['error'] = lang('Sales.item_insufficient_of_stock');
         } elseif ($saleIdNum === NEW_ENTRY) {
             $data['error'] = lang('Sales.unsuccessfully_suspended_sale');
             $this->sale_lib->clear_all();

@@ -851,9 +851,16 @@ class Items extends Secure_Controller
 
                 foreach ($taxPercents as $taxPercent) {
                     $taxPercentage = parse_tax($taxPercent);
+                    $taxName = is_array($taxNames) ? ($taxNames[$taxNameIndex] ?? '') : '';
 
-                    if (is_numeric($taxPercentage)) {
-                        $itemsTaxesData[] = ['name' => $taxNames[$taxNameIndex], 'percent' => $taxPercentage];
+                    if (is_numeric($taxPercentage) && $taxName !== '') {
+                        $row = ['name' => $taxName, 'percent' => $taxPercentage];
+
+                        // Avoid duplicate (name, percent) pairs which would violate
+                        // the composite primary key of ospos_items_taxes.
+                        if (!in_array($row, $itemsTaxesData, true)) {
+                            $itemsTaxesData[] = $row;
+                        }
                     }
 
                     $taxNameIndex++;
@@ -1087,11 +1094,18 @@ class Items extends Secure_Controller
     {
         $items_to_delete = $this->request->getPost('ids');
 
+        if (!is_array($items_to_delete)) {
+            $items_to_delete = $items_to_delete === null ? [] : [$items_to_delete];
+        }
+
+        $items_to_delete = array_values(array_filter(array_map('intval', $items_to_delete), static fn (int $id): bool => $id > 0));
+
         if ($this->item->delete_list($items_to_delete)) {
             $message = lang('Items.successful_deleted') . ' ' . count($items_to_delete) . ' ' . lang('Items.one_or_multiple');
-            return $this->response->setJSON(['success' => true, 'message' => $message]);
+            return $this->response->setJSON(['success' => true, 'message' => $message, 'ids' => $items_to_delete]);
         } else {
-            return $this->response->setJSON(['success' => false, 'message' => lang('Items.cannot_be_deleted')]);
+            $message = $this->item->deleteError ?: lang('Items.cannot_be_deleted');
+            return $this->response->setJSON(['success' => false, 'message' => $message, 'ids' => $items_to_delete]);
         }
     }
 

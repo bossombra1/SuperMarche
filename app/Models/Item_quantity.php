@@ -88,10 +88,35 @@ class Item_quantity extends Model
      * Atomically changes an item's quantity at a location by a signed delta.
      * Positive delta adds; negative delta subtracts. Creates the
      * item_quantities row if it doesn't yet exist. Negative resulting
-     * quantity is allowed (no floor guard).
+     * quantity is refused (floor guard) unless the stock is already
+     * negative (back-order scenario handled separately by the caller).
      */
     public function changeQuantity(int $itemId, int $locationId, float $quantityChange): bool
     {
+        if ($quantityChange < 0) {
+            // Lock the row and verify sufficient stock before subtracting.
+            $currentQuantity = 0.0;
+
+            $result = $this->db->query(
+                'SELECT quantity FROM ' . $this->db->prefixTable('item_quantities') . ' WHERE item_id = ? AND location_id = ? FOR UPDATE',
+                [$itemId, $locationId]
+            );
+
+            if ($result === false) {
+                return false;
+            }
+
+            $row = $result->getRow();
+
+            if ($row !== null) {
+                $currentQuantity = (float) $row->quantity;
+            }
+
+            if ($currentQuantity + $quantityChange < 0) {
+                return false;
+            }
+        }
+
         $builder = $this->db->table('item_quantities');
         $builder->set([
             'item_id'     => $itemId,

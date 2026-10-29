@@ -1208,10 +1208,18 @@ class Sale_lib
                 $item_quantity = $this->item_quantity->get_item_quantity($item_id, $item_location)->quantity;
                 $quantity_added = $this->get_quantity_already_added($item_id, $item_location);
 
-                if ($item_quantity - $quantity_added < 0) {
-                    return lang('Sales.quantity_less_than_zero');
-                } elseif ($item_quantity - $quantity_added < $item_info->reorder_level) {
-                    return lang('Sales.quantity_less_than_reorder_level');
+                $remaining = (float) $item_quantity - (float) $quantity_added;
+
+                if ($remaining < 0) {
+                    return 'Vente impossible : stock insuffisant. Stock disponible : ' . (int) $item_quantity . ' unité(s).';
+                }
+
+                if ($remaining == 0) {
+                    return 'Attention : cette vente épuisera le stock.';
+                }
+
+                if ($remaining <= (float) $item_info->reorder_level) {
+                    return 'Attention : stock bientôt épuisé. Il restera ' . (int) $remaining . ' unité(s) après cette vente.';
                 }
             }
         }
@@ -1298,7 +1306,12 @@ class Sale_lib
     public function delete_item(int $line): void
     {
         $items = $this->get_cart();
-        $item_type = $items[$line]['item_type'];
+
+        if (!isset($items[$line])) {
+            return;
+        }
+
+        $item_type = $items[$line]['item_type'] ?? null;
 
         if ($item_type == ITEM_TEMP) {
             $item_id = $items[$line]['item_id'];

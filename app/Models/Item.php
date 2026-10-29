@@ -19,6 +19,8 @@ use stdClass;
 class Item extends Model
 {
 
+    public ?string $deleteError = null;
+
     public const ALLOWED_SUGGESTIONS_COLUMNS = ['name', 'item_number', 'description', 'cost_price', 'unit_price'];
     public const ALLOWED_SUGGESTIONS_COLUMNS_WITH_EMPTY = ['', 'name', 'item_number', 'description', 'cost_price', 'unit_price'];
 
@@ -859,28 +861,61 @@ class Item extends Model
      */
     public function delete_list(array $item_ids): bool
     {
-        // Run these queries as a transaction, we want to make sure we do all or nothing
-        $this->db->transStart();
+        $this->deleteError = null;
 
-        // Set to 0 quantities
-        $item_quantity = model(Item_quantity::class);
-        $item_quantity->reset_quantity_list($item_ids);
-
-        $builder = $this->db->table('items');
-        $builder->whereIn('item_id', $item_ids);
-        $success = $builder->update(['deleted' => 1]);
-
-        $inventory = model(Inventory::class);
-
-        foreach ($item_ids as $item_id) {
-            $success &= $inventory->reset_quantity($item_id);
+        if (empty($item_ids)) {
+            return true;
         }
 
-        $this->db->transComplete();
+        $item_ids = array_values(array_unique(array_map('intval', $item_ids)));
 
-        $success &= $this->db->transStatus();
+        $this->db->transStart();
 
-        return $success;
+        try {
+            foreach ($item_ids as $item_id) {
+                $hasSales = $this->db->table('sales_items')->where('item_id', $item_id)->countAllResults() > 0;
+                $hasReceivings = $this->db->table('receivings_items')->where('item_id', $item_id)->countAllResults() > 0;
+
+                if ($hasSales || $hasReceivings) {
+                    $this->deleteError = 'Impossible de supprimer définitivement cet article : il possède un historique de ventes ou de réceptions.';
+                    $this->db->transRollback();
+                    return false;
+                }
+            }
+
+            foreach ($item_ids as $item_id) {
+                // Remove the item from any item kits that reference it.
+                $this->db->table('item_kit_items')->where('item_id', $item_id)->delete();
+
+                // Remove stock quantities, taxes and attribute links.
+                $this->db->table('item_quantities')->where('item_id', $item_id)->delete();
+                $this->db->table('items_taxes')->where('item_id', $item_id)->delete();
+                $this->db->table('attribute_links')->where('item_id', $item_id)->delete();
+
+                // Remove inventory movements for this item.
+                $this->db->table('inventory')->where('trans_items', $item_id)->delete();
+
+                // Clear any low_sell_item_id references pointing to this item.
+                $this->db->table('items')->where('low_sell_item_id', $item_id)->update(['low_sell_item_id' => 0]);
+            }
+
+            $builder = $this->db->table('items');
+            $builder->whereIn('item_id', $item_ids);
+            $deleted = $builder->delete();
+
+            $this->db->transComplete();
+
+            if (!$this->db->transStatus() || $deleted < count($item_ids)) {
+                $this->deleteError = 'La suppression définitive de l\'article a échoué.';
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->db->transRollback();
+            $this->deleteError = 'La suppression définitive de l\'article a échoué.';
+            return false;
+        }
     }
 
     /**
