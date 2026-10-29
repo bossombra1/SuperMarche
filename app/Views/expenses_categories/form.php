@@ -18,7 +18,7 @@
                     'name'  => 'category_name',
                     'id'    => 'category_name',
                     'class' => 'form-control input-sm',
-                    'value' => $category_info->category_name
+                    'value' => html_entity_decode($category_info->category_name, ENT_QUOTES | ENT_HTML5, 'UTF-8')
                 ]) ?>
             </div>
         </div>
@@ -30,7 +30,7 @@
                     'name'  => 'category_description',
                     'id'    => 'category_description',
                     'class' => 'form-control input-sm',
-                    'value' => $category_info->category_description
+                    'value' => html_entity_decode($category_info->category_description, ENT_QUOTES | ENT_HTML5, 'UTF-8')
                 ]) ?>
             </div>
         </div>

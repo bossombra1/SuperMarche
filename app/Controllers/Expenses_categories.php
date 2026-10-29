@@ -35,8 +35,8 @@ class Expenses_categories extends Secure_Controller    // TODO: Is this class ev
         $search = $this->request->getGet('search');
         $limit  = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $sort   = $this->sanitizeSortColumn(expense_category_headers(), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'expense_category_id');
-        $order  = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort   = $this->sanitizeSortColumn(expense_category_headers(), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'expense_category_id');
+        $order  = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $expense_categories = $this->expense_category->search($search, $limit, $offset, $sort, $order);
         $total_rows = $this->expense_category->get_found_rows($search);
@@ -78,17 +78,29 @@ class Expenses_categories extends Secure_Controller    // TODO: Is this class ev
     public function postSave(int $expense_category_id = NEW_ENTRY): ResponseInterface
     {
         $expense_category_data = [
-            'category_name'        => $this->request->getPost('category_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-            'category_description' => $this->request->getPost('category_description', FILTER_SANITIZE_FULL_SPECIAL_CHARS)
+            'category_name'        => $this->request->getPost('category_name', FILTER_SANITIZE_SPECIAL_CHARS),
+            'category_description' => $this->request->getPost('category_description', FILTER_SANITIZE_SPECIAL_CHARS)
         ];
 
-        if ($this->expense_category->save_value($expense_category_data, $expense_category_id)) {
+        try {
+            $saved = $this->expense_category->save_value($expense_category_data, $expense_category_id);
+        } catch (\Throwable $exception) {
+            log_message('error', 'Expenses_categories::postSave failed: ' . $exception->getMessage());
+
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => lang('Expenses_categories.error_adding_updating') . ' ' . $expense_category_data['category_name'],
+                'id'      => NEW_ENTRY
+            ]);
+        }
+
+        if ($saved) {
             // New expense_category
             if ($expense_category_id == NEW_ENTRY) {
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => lang('Expenses_categories.successful_adding'),
-                    'id'      => $expense_category_data['expense_category_id']
+                    'id'      => $expense_category_data['expense_category_id'] ?? NEW_ENTRY
                 ]);
             } else { // Existing Expense Category
                 return $this->response->setJSON([
@@ -99,7 +111,7 @@ class Expenses_categories extends Secure_Controller    // TODO: Is this class ev
             }
         } else { // Failure
             return $this->response->setJSON([
-                'success' => true,
+                'success' => false,
                 'message' => lang('Expenses_categories.error_adding_updating') . ' ' . $expense_category_data['category_name'],
                 'id'      => NEW_ENTRY
             ]);
@@ -111,7 +123,7 @@ class Expenses_categories extends Secure_Controller    // TODO: Is this class ev
      */
     public function postDelete(): ResponseInterface
     {
-        $expense_category_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $expense_category_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if ($this->expense_category->delete_list($expense_category_to_delete)) {    // TODO: Convert to ternary notation.
             return $this->response->setJSON([

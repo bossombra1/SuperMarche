@@ -81,8 +81,8 @@ class Taxes extends Secure_Controller
         $search = $this->request->getGet('search');
         $limit = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $sort = $this->sanitizeSortColumn(get_tax_rates_manage_table_headers(), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'tax_rate_id');
-        $order = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort = $this->sanitizeSortColumn(get_tax_rates_manage_table_headers(), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'tax_rate_id');
+        $order = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $tax_rates = $this->tax->search($search, $limit, $offset, $sort, $order);
 
@@ -439,10 +439,10 @@ class Taxes extends Secure_Controller
     public function postSave_tax_codes(): ResponseInterface
     {
         $tax_code_id = $this->request->getPost('tax_code_id', FILTER_SANITIZE_NUMBER_INT);
-        $tax_code = $this->request->getPost('tax_code', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $tax_code_name = $this->request->getPost('tax_code_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $city = $this->request->getPost('city', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $state = $this->request->getPost('state', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $tax_code = $this->request->getPost('tax_code', FILTER_SANITIZE_SPECIAL_CHARS);
+        $tax_code_name = $this->request->getPost('tax_code_name', FILTER_SANITIZE_SPECIAL_CHARS);
+        $city = $this->request->getPost('city', FILTER_SANITIZE_SPECIAL_CHARS);
+        $state = $this->request->getPost('state', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if (!empty($tax_code_name)) {
             $rules = [
@@ -489,10 +489,10 @@ class Taxes extends Secure_Controller
     public function postSave_tax_jurisdictions(): ResponseInterface
     {
         $jurisdiction_id = $this->request->getPost('jurisdiction_id', FILTER_SANITIZE_NUMBER_INT);
-        $jurisdiction_name = $this->request->getPost('jurisdiction_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $tax_group = $this->request->getPost('tax_group', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $jurisdiction_name = $this->request->getPost('jurisdiction_name', FILTER_SANITIZE_SPECIAL_CHARS);
+        $tax_group = $this->request->getPost('tax_group', FILTER_SANITIZE_SPECIAL_CHARS);
         $tax_type = $this->request->getPost('tax_type', FILTER_SANITIZE_NUMBER_INT);
-        $reporting_authority = $this->request->getPost('reporting_authority', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $reporting_authority = $this->request->getPost('reporting_authority', FILTER_SANITIZE_SPECIAL_CHARS);
         $tax_group_sequence = $this->request->getPost('tax_group_sequence', FILTER_SANITIZE_NUMBER_INT);
         $cascade_sequence = $this->request->getPost('cascade_sequence', FILTER_SANITIZE_NUMBER_INT);
 
@@ -554,7 +554,7 @@ class Taxes extends Secure_Controller
     public function postSave_tax_categories(): ResponseInterface
     {
         $tax_category_id = $this->request->getPost('tax_category_id', FILTER_SANITIZE_NUMBER_INT);
-        $tax_category = $this->request->getPost('tax_category', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $tax_category = $this->request->getPost('tax_category', FILTER_SANITIZE_SPECIAL_CHARS);
         $tax_group_sequence = $this->request->getPost('tax_group_sequence', FILTER_SANITIZE_NUMBER_INT);
 
         if (!empty($tax_category)) {

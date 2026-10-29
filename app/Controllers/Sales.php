@@ -153,17 +153,17 @@ class Sales extends Secure_Controller
             return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => lang('Sales.not_authorized')]);
         }
 
-        $search = $this->request->getGet('search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $search = $this->request->getGet('search', FILTER_SANITIZE_SPECIAL_CHARS);
         $limit = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $sort = $this->sanitizeSortColumn(salesHeaders(), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'sale_id');
-        $order = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort = $this->sanitizeSortColumn(salesHeaders(), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'sale_id');
+        $order = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $filters = [
             'sale_type'         => 'all',
             'location_id'       => 'all',
-            'start_date'        => $this->request->getGet('start_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-            'end_date'          => $this->request->getGet('end_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+            'start_date'        => $this->request->getGet('start_date', FILTER_SANITIZE_SPECIAL_CHARS),
+            'end_date'          => $this->request->getGet('end_date', FILTER_SANITIZE_SPECIAL_CHARS),
             'only_cash'         => false,
             'only_due'          => false,
             'only_check'        => false,
@@ -177,7 +177,7 @@ class Sales extends Secure_Controller
         ];
 
         // Check if any filter is set in the multiselect dropdown
-        $requestFilters = array_fill_keys($this->request->getGet('filters', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? [], true);
+        $requestFilters = array_fill_keys($this->request->getGet('filters', FILTER_SANITIZE_SPECIAL_CHARS) ?? [], true);
         $filters = array_merge($filters, $requestFilters);
 
         $sales = $this->sale->search($search, $filters, $limit, $offset, $sort, $order);
@@ -265,7 +265,7 @@ class Sales extends Secure_Controller
      */
     public function postChangeMode(): ResponseInterface|string
     {
-        $mode = $this->request->getPost('mode', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $mode = $this->request->getPost('mode', FILTER_SANITIZE_SPECIAL_CHARS);
         $this->sale_lib->set_mode($mode);
 
         if ($mode == 'sale') {
@@ -334,7 +334,7 @@ class Sales extends Secure_Controller
      */
     public function postSetComment(): ResponseInterface
     {
-        $this->sale_lib->set_comment($this->request->getPost('comment', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+        $this->sale_lib->set_comment($this->request->getPost('comment', FILTER_SANITIZE_SPECIAL_CHARS));
         return $this->response->setJSON(['success' => true]);
     }
 
@@ -355,7 +355,7 @@ class Sales extends Secure_Controller
      */
     public function postSetPaymentType(): ResponseInterface|string    // TODO: This function does not appear to be called anywhere in the code.
     {
-        $this->sale_lib->set_payment_type($this->request->getPost('selected_payment_type', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+        $this->sale_lib->set_payment_type($this->request->getPost('selected_payment_type', FILTER_SANITIZE_SPECIAL_CHARS));
         return $this->reload();
     }
 
@@ -392,7 +392,7 @@ class Sales extends Secure_Controller
      */
     public function postSetEmailReceipt(): ResponseInterface
     {
-        $this->sale_lib->set_email_receipt($this->request->getPost('email_receipt', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+        $this->sale_lib->set_email_receipt($this->request->getPost('email_receipt', FILTER_SANITIZE_SPECIAL_CHARS));
         return $this->response->setJSON(['success' => true]);
     }
 
@@ -406,7 +406,7 @@ class Sales extends Secure_Controller
     {
         $data = [];
         $giftcard = model(Giftcard::class);
-        $paymentType = $this->request->getPost('payment_type', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $paymentType = $this->request->getPost('payment_type', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if (!is_string($paymentType) || $paymentType === '') {
             $data['error'] = lang('Sales.must_enter_numeric');
@@ -576,7 +576,7 @@ class Sales extends Secure_Controller
             }
         }
 
-        $item_id_or_number_or_item_kit_or_receipt = $this->request->getPost('item', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $item_id_or_number_or_item_kit_or_receipt = $this->request->getPost('item', FILTER_SANITIZE_SPECIAL_CHARS);
         $this->token_lib->parse_barcode($quantity, $price, $item_id_or_number_or_item_kit_or_receipt);
         $mode = $this->sale_lib->get_mode();
         $quantity = ($mode == 'return') ? -$quantity : $quantity;
@@ -658,12 +658,12 @@ class Sales extends Secure_Controller
         ];
 
         if ($this->validate($rules, $messages)) {
-            $description = $this->request->getPost('description', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $serialnumber = $this->request->getPost('serialnumber', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $description = $this->request->getPost('description', FILTER_SANITIZE_SPECIAL_CHARS);
+            $serialnumber = $this->request->getPost('serialnumber', FILTER_SANITIZE_SPECIAL_CHARS);
             $price = parse_decimals($this->request->getPost('price'));
             $price = $price !== false ? number_format((float) $price, totals_decimals(), '.', '') : $price;
             $quantity = parse_decimals($this->request->getPost('quantity'));
-            $discount_type = $this->request->getPost('discount_type', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $discount_type = $this->request->getPost('discount_type', FILTER_SANITIZE_SPECIAL_CHARS);
             $discount = $discount_type
                 ? parse_quantity($this->request->getPost('discount'))
                 : parse_decimals($this->request->getPost('discount'));
@@ -1590,7 +1590,7 @@ class Sales extends Secure_Controller
             return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => lang('Sales.not_authorized')]);
         }
 
-        $newdate = $this->request->getPost('date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $newdate = $this->request->getPost('date', FILTER_SANITIZE_SPECIAL_CHARS);
         $employeeId = $this->employee->get_logged_in_employee_info()->person_id;
         $inventory = model(Inventory::class);
         $dateFormatter = date_create_from_format($this->config['dateformat'] . ' ' . $this->config['timeformat'], $newdate);
@@ -1600,12 +1600,12 @@ class Sales extends Secure_Controller
             'sale_time'      => $saleTime,
             'customer_id'    => $this->request->getPost('customer_id') != '' ? $this->request->getPost('customer_id', FILTER_SANITIZE_NUMBER_INT) : null,
             'employee_id'    => $this->request->getPost('employee_id') != '' ? $this->request->getPost('employee_id', FILTER_SANITIZE_NUMBER_INT) : null,
-            'comment'        => $this->request->getPost('comment', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-            'invoice_number' => $this->request->getPost('invoice_number') != '' ? $this->request->getPost('invoice_number', FILTER_SANITIZE_FULL_SPECIAL_CHARS) : null
+            'comment'        => $this->request->getPost('comment', FILTER_SANITIZE_SPECIAL_CHARS),
+            'invoice_number' => $this->request->getPost('invoice_number') != '' ? $this->request->getPost('invoice_number', FILTER_SANITIZE_SPECIAL_CHARS) : null
         ];
 
         // Validate reference_code for the new payment if applicable
-        $paymentTypeNewCheck = $this->request->getPost('payment_type_new', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $paymentTypeNewCheck = $this->request->getPost('payment_type_new', FILTER_SANITIZE_SPECIAL_CHARS);
         $paymentAmountNewCheck = $this->request->getPost('payment_amount_new');
         if ($paymentTypeNewCheck != PAYMENT_TYPE_UNASSIGNED && !empty($paymentAmountNewCheck)
             && in_array($paymentTypeNewCheck, get_reference_code_payment_types())) {
@@ -1633,11 +1633,11 @@ class Sales extends Secure_Controller
         $numberOfPayments = $this->request->getPost('number_of_payments', FILTER_SANITIZE_NUMBER_INT);
         for ($i = 0; $i < $numberOfPayments; ++$i) {
             $paymentId = $this->request->getPost("payment_id_$i", FILTER_SANITIZE_NUMBER_INT);
-            $paymentType = $this->request->getPost("payment_type_$i", FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $paymentType = $this->request->getPost("payment_type_$i", FILTER_SANITIZE_SPECIAL_CHARS);
             $paymentAmount = parse_decimals($this->request->getPost("payment_amount_$i"));
-            $refundType = $this->request->getPost("refund_type_$i", FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $refundType = $this->request->getPost("refund_type_$i", FILTER_SANITIZE_SPECIAL_CHARS);
             $cashRefund = parse_decimals($this->request->getPost("refund_amount_$i"));
-            $referenceCode = $this->request->getPost("reference_code_$i", FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?: null;
+            $referenceCode = $this->request->getPost("reference_code_$i", FILTER_SANITIZE_SPECIAL_CHARS) ?: null;
 
             $cashAdjustment = $paymentType == lang('Sales.cash_adjustment') ? CASH_ADJUSTMENT_TRUE : CASH_ADJUSTMENT_FALSE;
 
@@ -1666,8 +1666,8 @@ class Sales extends Secure_Controller
 
         $paymentId = NEW_ENTRY;
         $paymentAmountNew = $this->request->getPost('payment_amount_new');
-        $paymentType = $this->request->getPost('payment_type_new', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $referenceCodeNew = $this->request->getPost('reference_code_new', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?: null;
+        $paymentType = $this->request->getPost('payment_type_new', FILTER_SANITIZE_SPECIAL_CHARS);
+        $referenceCodeNew = $this->request->getPost('reference_code_new', FILTER_SANITIZE_SPECIAL_CHARS) ?: null;
 
         if ($paymentType != PAYMENT_TYPE_UNASSIGNED && !empty($paymentAmountNew)) {
             $paymentAmount = parse_decimals($paymentAmountNew);
@@ -1863,7 +1863,7 @@ class Sales extends Secure_Controller
     public function postCheckInvoiceNumber(): ResponseInterface
     {
         $sale_id = $this->request->getPost('sale_id', FILTER_SANITIZE_NUMBER_INT);
-        $invoice_number = $this->request->getPost('invoice_number', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $invoice_number = $this->request->getPost('invoice_number', FILTER_SANITIZE_SPECIAL_CHARS);
         $exists = !empty($invoice_number) && $this->sale->check_invoice_number_exists($invoice_number, $sale_id);
         return $this->response->setJSON(!$exists ? 'true' : 'false');
     }
@@ -1898,7 +1898,7 @@ class Sales extends Secure_Controller
     public function postChangeItemNumber(): ResponseInterface
     {
         $item_id = $this->request->getPost('item_id', FILTER_SANITIZE_NUMBER_INT);
-        $item_number = $this->request->getPost('item_number', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $item_number = $this->request->getPost('item_number', FILTER_SANITIZE_SPECIAL_CHARS);
         $this->item->update_item_number($item_id, $item_number);
         $cart = $this->sale_lib->get_cart();
         $x = $this->search_cart_for_item_id($item_id, $cart);
@@ -1918,7 +1918,7 @@ class Sales extends Secure_Controller
     public function postChangeItemName(): ResponseInterface
     {
         $item_id = $this->request->getPost('item_id', FILTER_SANITIZE_NUMBER_INT);
-        $name = $this->request->getPost('item_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $name = $this->request->getPost('item_name', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $this->item->update_item_name($item_id, $name);
 
@@ -1942,7 +1942,7 @@ class Sales extends Secure_Controller
     public function postChangeItemDescription(): ResponseInterface
     {
         $item_id = $this->request->getPost('item_id', FILTER_SANITIZE_NUMBER_INT);
-        $description = $this->request->getPost('item_description', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $description = $this->request->getPost('item_description', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $this->item->update_item_description($item_id, $description);
 

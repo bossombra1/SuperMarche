@@ -956,7 +956,9 @@ class Sale_lib
      */
     public function get_payment_type(): ?string
     {
-        return $this->session->get('payment_type');
+        $paymentType = $this->session->get('payment_type');
+
+        return $paymentType === null ? null : html_entity_decode($paymentType, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     /**
@@ -1375,7 +1377,8 @@ class Sale_lib
         if ($this->session->get('cash_rounding')) {
             $cash_types_only = true;
             foreach ($this->sale->get_sale_payments($sale_id)->getResult() as $row) {
-                if ($row->payment_type != lang('Sales.cash') && $row->payment_type != lang('Sales.cash_adjustment')) {
+                $rowPaymentType = html_entity_decode($row->payment_type, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if ($rowPaymentType != lang('Sales.cash') && $rowPaymentType != lang('Sales.cash_adjustment')) {
                     $cash_types_only = false;
                 }
             }
@@ -1392,7 +1395,7 @@ class Sale_lib
 
         // Now load payments
         foreach ($this->sale->get_sale_payments($sale_id)->getResult() as $row) {
-            $this->addPayment($row->payment_type, $row->payment_amount, $row->reference_code ?? null, $row->cash_adjustment);
+            $this->addPayment(html_entity_decode($row->payment_type, ENT_QUOTES | ENT_HTML5, 'UTF-8'), $row->payment_amount, $row->reference_code ?? null, $row->cash_adjustment);
         }
 
         $this->set_customer($this->sale->get_customer($sale_id)->person_id);

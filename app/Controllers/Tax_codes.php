@@ -50,8 +50,8 @@ class Tax_codes extends Secure_Controller
         $search = $this->request->getGet('search');
         $limit  = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $sort   = $this->sanitizeSortColumn(get_tax_code_table_headers(), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'tax_code');
-        $order  = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort   = $this->sanitizeSortColumn(get_tax_code_table_headers(), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'tax_code');
+        $order  = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $tax_codes = $this->tax_code->search($search, $limit, $offset, $sort, $order);
         $total_rows = $this->tax_code->get_found_rows($search);
@@ -95,10 +95,10 @@ class Tax_codes extends Secure_Controller
     public function postSave(int $tax_code_id = NEW_ENTRY): ResponseInterface
     {
         $tax_code_data = [
-            'tax_code'      => $this->request->getPost('tax_code', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-            'tax_code_name' => $this->request->getPost('tax_code_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-            'city'          => $this->request->getPost('city', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-            'state'         => $this->request->getPost('state', FILTER_SANITIZE_FULL_SPECIAL_CHARS)
+            'tax_code'      => $this->request->getPost('tax_code', FILTER_SANITIZE_SPECIAL_CHARS),
+            'tax_code_name' => $this->request->getPost('tax_code_name', FILTER_SANITIZE_SPECIAL_CHARS),
+            'city'          => $this->request->getPost('city', FILTER_SANITIZE_SPECIAL_CHARS),
+            'state'         => $this->request->getPost('state', FILTER_SANITIZE_SPECIAL_CHARS)
         ];
 
         if ($this->tax_code->save($tax_code_data)) {

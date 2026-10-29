@@ -298,7 +298,7 @@ class Sale extends Model
         $gift_card_amount = 0;
 
         foreach ($payments as $key => $payment) {
-            if (strstr($payment['payment_type'], lang('Sales.giftcard'))) {
+            if (strstr(html_entity_decode($payment['payment_type'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), lang('Sales.giftcard'))) {
                 $gift_card_count  += $payment['count'];
                 $gift_card_amount += $payment['payment_amount'];
 
@@ -468,7 +468,7 @@ class Sale extends Model
             // Add new payments
             foreach ($sale_data['payments'] as $payment) {
                 $payment_id = $payment['payment_id'];
-                $payment_type = $payment['payment_type'];
+                $payment_type = html_entity_decode($payment['payment_type'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $payment_amount = $payment['payment_amount'];
                 $cash_refund = $payment['cash_refund'];
                 $cash_adjustment = $payment['cash_adjustment'];
@@ -578,7 +578,7 @@ class Sale extends Model
         $totalAmountUsed = 0;
 
         foreach ($payments as $paymentId => $payment) {
-            $splitPayment = explode(':', $payment['payment_type'], 2);
+            $splitPayment = explode(':', html_entity_decode($payment['payment_type'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), 2);
             $paymentPrefix = $splitPayment[0];
 
             if ($paymentPrefix === lang('Sales.giftcard')) {

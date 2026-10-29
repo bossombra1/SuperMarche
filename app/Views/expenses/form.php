@@ -64,7 +64,7 @@
                     'name'  => 'supplier_tax_code',
                     'id'    => 'supplier_tax_code',
                     'class' => 'form-control input-sm',
-                    'value' => $expenses_info->supplier_tax_code
+                    'value' => html_entity_decode($expenses_info->supplier_tax_code, ENT_QUOTES | ENT_HTML5, 'UTF-8')
                 ]) ?>
             </div>
         </div>
@@ -142,7 +142,7 @@
                     'name'  => 'description',
                     'id'    => 'description',
                     'class' => 'form-control input-sm',
-                    'value' => $expenses_info->description
+                    'value' => html_entity_decode($expenses_info->description, ENT_QUOTES | ENT_HTML5, 'UTF-8')
                 ]) ?>
             </div>
         </div>

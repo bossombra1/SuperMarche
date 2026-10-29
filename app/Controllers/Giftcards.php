@@ -36,8 +36,8 @@ class Giftcards extends Secure_Controller
         $search = $this->request->getGet('search');
         $limit  = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $sort   = $this->sanitizeSortColumn(giftcard_headers(), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'giftcard_id');
-        $order  = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort   = $this->sanitizeSortColumn(giftcard_headers(), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'giftcard_id');
+        $order  = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $giftcards = $this->giftcard->search($search, $limit, $offset, $sort, $order);
         $total_rows = $this->giftcard->get_found_rows($search);
@@ -116,7 +116,7 @@ class Giftcards extends Secure_Controller
      */
     public function postSave(int $giftcard_id = NEW_ENTRY): ResponseInterface
     {
-        $giftcard_number = $this->request->getPost('giftcard_number', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $giftcard_number = $this->request->getPost('giftcard_number', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if ($giftcard_id == NEW_ENTRY && trim($giftcard_number) == '') {
             $giftcard_number = $this->giftcard->generate_unique_giftcard_name($giftcard_number);
@@ -174,7 +174,7 @@ class Giftcards extends Secure_Controller
      */
     public function postDelete(): ResponseInterface
     {
-        $giftcards_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $giftcards_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if ($this->giftcard->delete_list($giftcards_to_delete)) {
             return $this->response->setJSON([

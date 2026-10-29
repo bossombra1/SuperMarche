@@ -50,16 +50,16 @@ class Cashups extends Secure_Controller
         $search = $this->request->getGet('search');
         $limit = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $sort = $this->sanitizeSortColumn(cashup_headers(), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'cashup_id');
-        $order = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort = $this->sanitizeSortColumn(cashup_headers(), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'cashup_id');
+        $order = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
         $filters = [
-            'start_date' => $this->request->getGet('start_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS),    // TODO: Is this the best way to filter dates
-            'end_date'   => $this->request->getGet('end_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+            'start_date' => $this->request->getGet('start_date', FILTER_SANITIZE_SPECIAL_CHARS),    // TODO: Is this the best way to filter dates
+            'end_date'   => $this->request->getGet('end_date', FILTER_SANITIZE_SPECIAL_CHARS),
             'is_deleted' => false
         ];
 
         // Check if any filter is set in the multiselect dropdown
-        $request_filters = array_fill_keys($this->request->getGet('filters', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? [], true);
+        $request_filters = array_fill_keys($this->request->getGet('filters', FILTER_SANITIZE_SPECIAL_CHARS) ?? [], true);
         $filters = array_merge($filters, $request_filters);
         $cash_ups = $this->cashup->search($search, $filters, $limit, $offset, $sort, $order);
         $total_rows = $this->cashup->get_found_rows($search, $filters);
@@ -231,7 +231,7 @@ class Cashups extends Secure_Controller
             'closed_amount_check'  => $closed_amount_check,
             'closed_amount_total'  => $this->_calculate_total($open_amount_cash, $transfer_amount_cash, $closed_amount_due, $closed_amount_cash, $closed_amount_card, $closed_amount_check),
             'note'                 => $this->request->getPost('note') != null,
-            'description'          => $this->request->getPost('description', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+            'description'          => $this->request->getPost('description', FILTER_SANITIZE_SPECIAL_CHARS),
             'open_employee_id'     => $logged_in_employee->person_id,
             'close_employee_id'    => $logged_in_employee->person_id,
             'deleted'              => $this->request->getPost('deleted') != null
@@ -254,7 +254,7 @@ class Cashups extends Secure_Controller
      */
     public function postDelete(): ResponseInterface
     {
-        $cash_ups_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $cash_ups_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if ($this->cashup->delete_list($cash_ups_to_delete)) {
             return $this->response->setJSON(['success' => true, 'message' => lang('Cashups.successful_deleted') . ' ' . count($cash_ups_to_delete) . ' ' . lang('Cashups.one_or_multiple'), 'ids' => $cash_ups_to_delete]);

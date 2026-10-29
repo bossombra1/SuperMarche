@@ -43,8 +43,8 @@ class Attributes extends Secure_Controller
         $search = $this->request->getGet('search');
         $limit  = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $sort   = $this->sanitizeSortColumn(attribute_definition_headers(), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'definition_id');
-        $order  = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort   = $this->sanitizeSortColumn(attribute_definition_headers(), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'definition_id');
+        $order  = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $attributes = $this->attribute->search($search, $limit, $offset, $sort, $order);
         $total_rows = $this->attribute->get_found_rows($search);
@@ -113,7 +113,7 @@ class Attributes extends Secure_Controller
     {
         $definition_flags = 0;
 
-        $flags = (empty($this->request->getPost('definition_flags'))) ? [] : $this->request->getPost('definition_flags', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $flags = (empty($this->request->getPost('definition_flags'))) ? [] : $this->request->getPost('definition_flags', FILTER_SANITIZE_SPECIAL_CHARS);
 
         foreach ($flags as $flag) {
             $definition_flags |= $flag;
@@ -287,7 +287,7 @@ class Attributes extends Secure_Controller
      */
     public function postDelete(): ResponseInterface
     {
-        $attributes_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $attributes_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if($this->attribute->deleteDefinitionList($attributes_to_delete)) {
             $message = lang('Attributes.definition_successful_deleted') . ' ' . count($attributes_to_delete) . ' ' . lang('Attributes.definition_one_or_multiple');

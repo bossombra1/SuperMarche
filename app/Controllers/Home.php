@@ -88,7 +88,7 @@ class Home extends Secure_Controller
         }
 
         if (!empty($this->request->getPost('current_password')) && $employeeId != NEW_ENTRY) {
-            if ($this->employee->check_password($this->request->getPost('username', FILTER_SANITIZE_FULL_SPECIAL_CHARS), $this->request->getPost('current_password'))) {
+            if ($this->employee->check_password($this->request->getPost('username', FILTER_SANITIZE_SPECIAL_CHARS), $this->request->getPost('current_password'))) {
                 // Validate password length BEFORE hashing
                 $new_password = $this->request->getPost('password');
 
@@ -101,7 +101,7 @@ class Home extends Secure_Controller
                 }
 
                 $employee_data = [
-                    'username'     => $this->request->getPost('username', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                    'username'     => $this->request->getPost('username', FILTER_SANITIZE_SPECIAL_CHARS),
                     'password'     => password_hash($new_password, PASSWORD_DEFAULT),
                     'hash_version' => 2
                 ];

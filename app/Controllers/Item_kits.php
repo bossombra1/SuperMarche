@@ -77,8 +77,8 @@ class Item_kits extends Secure_Controller
         $search = $this->request->getGet('search') ?? '';
         $limit  = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $sort   = $this->sanitizeSortColumn(item_kit_headers(), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'item_kit_id');
-        $order  = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort   = $this->sanitizeSortColumn(item_kit_headers(), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'item_kit_id');
+        $order  = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $item_kits = $this->item_kit->search($search, $limit, $offset, $sort, $order);
         $total_rows = $this->item_kit->get_found_rows($search);
@@ -228,7 +228,7 @@ class Item_kits extends Secure_Controller
      */
     public function postDelete(): ResponseInterface
     {
-        $item_kits_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $item_kits_to_delete = $this->request->getPost('ids', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if ($this->item_kit->delete_list($item_kits_to_delete)) {
             return $this->response->setJSON([
@@ -248,7 +248,7 @@ class Item_kits extends Secure_Controller
      */
     public function postCheckItemNumber(): ResponseInterface
     {
-        $exists = $this->item_kit->item_number_exists($this->request->getPost('item_kit_number', FILTER_SANITIZE_FULL_SPECIAL_CHARS), $this->request->getPost('item_kit_id', FILTER_SANITIZE_NUMBER_INT));
+        $exists = $this->item_kit->item_number_exists($this->request->getPost('item_kit_number', FILTER_SANITIZE_SPECIAL_CHARS), $this->request->getPost('item_kit_id', FILTER_SANITIZE_NUMBER_INT));
         return $this->response->setJSON(!$exists ? 'true' : 'false');
     }
 

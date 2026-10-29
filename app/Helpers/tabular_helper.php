@@ -175,7 +175,7 @@ function getSalesManagePaymentsSummary(array $payments): string
     foreach ($payments as $key => $payment) {
         $amount = $payment['payment_amount'];
         $total = bcadd($total, $amount);
-        $table .= '<div class="summary_row">' . $payment['payment_type'] . ': ' . to_currency($amount) . '</div>';
+        $table .= '<div class="summary_row">' . esc(html_entity_decode($payment['payment_type'], ENT_QUOTES | ENT_HTML5, 'UTF-8')) . ': ' . to_currency($amount) . '</div>';
     }
 
     $table .= '<div class="summary_row">' . lang('Sales.total') . ': ' . to_currency($total) . '</div>';
@@ -755,8 +755,8 @@ function get_expense_category_data_row(object $expense_category): array
 
     return [
         'expense_category_id'  => $expense_category->expense_category_id,
-        'category_name'        => $expense_category->category_name,
-        'category_description' => $expense_category->category_description,
+        'category_name'        => html_entity_decode($expense_category->category_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+        'category_description' => html_entity_decode($expense_category->category_description, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
         'edit'                 => anchor(
             "$controller/view/$expense_category->expense_category_id",
             '<span class="glyphicon glyphicon-edit"></span>',
@@ -803,14 +803,14 @@ function get_expenses_data_row(object $expense): array
     return [
         'expense_id'        => $expense->expense_id,
         'date'              => to_datetime(strtotime($expense->date)),
-        'supplier_name'     => $expense->supplier_name,
-        'supplier_tax_code' => $expense->supplier_tax_code,
+        'supplier_name'     => html_entity_decode($expense->supplier_name ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+        'supplier_tax_code' => html_entity_decode($expense->supplier_tax_code ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
         'amount'            => to_currency($expense->amount),
         'tax_amount'        => to_currency($expense->tax_amount),
-        'payment_type'      => $expense->payment_type,
-        'category_name'     => $expense->category_name,
-        'description'       => $expense->description,
-        'created_by'        => $expense->first_name . ' ' . $expense->last_name,
+        'payment_type'      => html_entity_decode($expense->payment_type ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+        'category_name'     => html_entity_decode($expense->category_name ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+        'description'       => html_entity_decode($expense->description ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+        'created_by'        => html_entity_decode(($expense->first_name ?? '') . ' ' . ($expense->last_name ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
         'edit'              => anchor(
             "$controller/view/$expense->expense_id",
             '<span class="glyphicon glyphicon-edit"></span>',
@@ -854,7 +854,7 @@ function get_expenses_manage_payments_summary(array $payments, ResultInterface $
 
     foreach ($payments as $key => $payment) {
         $amount = $payment['amount'];
-        $table .= '<div class="summary_row">' . $payment['payment_type'] . ': ' . to_currency($amount) . '</div>';
+        $table .= '<div class="summary_row">' . esc(html_entity_decode($payment['payment_type'], ENT_QUOTES | ENT_HTML5, 'UTF-8')) . ': ' . to_currency($amount) . '</div>';
     }
 
     $table .= '</div>';
@@ -945,9 +945,9 @@ function get_controller(): string
  */
 function restoreTableFilters(IncomingRequest $request): array
 {
-    $startDate = $request->getGet('start_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $endDate = $request->getGet('end_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $urlFilters = $request->getGet('filters', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $startDate = $request->getGet('start_date', FILTER_SANITIZE_SPECIAL_CHARS);
+    $endDate = $request->getGet('end_date', FILTER_SANITIZE_SPECIAL_CHARS);
+    $urlFilters = $request->getGet('filters', FILTER_SANITIZE_SPECIAL_CHARS);
 
     return array_filter([
         'start_date' => $startDate ?: null,

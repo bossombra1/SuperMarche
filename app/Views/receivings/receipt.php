@@ -100,7 +100,7 @@ echo view('partial/print_receipt', ['print_after_sale', $print_after_sale, 'sele
             <tr>
                 <td colspan="3" style="text-align: right;"><?= lang('Sales.payment') ?></td>
                 <td>
-                    <div class="total-value"><?= esc($payment_type) ?></div>
+                    <div class="total-value"><?= esc(html_entity_decode($payment_type, ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?></div>
                 </td>
             </tr>
 

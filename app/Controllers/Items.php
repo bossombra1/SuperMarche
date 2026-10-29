@@ -108,17 +108,17 @@ class Items extends Secure_Controller
      **/
     public function getSearch(): ResponseInterface
     {
-        $search = $this->request->getGet('search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $search = $this->request->getGet('search', FILTER_SANITIZE_SPECIAL_CHARS);
         $limit = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT);
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT);
-        $order = $this->request->getGet('order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $order = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $this->item_lib->set_item_location($this->request->getGet('stock_location'));
 
         $definitionNamesWithTypes = $this->attribute->getDefinitionsByFlags(Attribute::SHOW_IN_ITEMS, true);
         $definitionIds = array_keys($definitionNamesWithTypes);
 
-        $sort = $this->sanitizeSortColumn(itemSortColumns($definitionIds), $this->request->getGet('sort', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 'items.item_id');
+        $sort = $this->sanitizeSortColumn(itemSortColumns($definitionIds), $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS), 'items.item_id');
 
         $filters = [
             'start_date'        => $this->request->getGet('start_date'),
@@ -135,7 +135,7 @@ class Items extends Secure_Controller
         ];
 
         // Check if any filter is set in the multiselect dropdown
-        $requestFilters = array_fill_keys($this->request->getGet('filters', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? [], true);
+        $requestFilters = array_fill_keys($this->request->getGet('filters', FILTER_SANITIZE_SPECIAL_CHARS) ?? [], true);
         $filters = array_merge($filters, $requestFilters);
 
         // When search_custom is enabled, include attributes that are searchable but may not be visible in table
@@ -788,7 +788,7 @@ class Items extends Secure_Controller
         // Save item data
         $itemData = [
             'name'                  => $this->request->getPost('name'),
-            'description'           => $this->request->getPost('description', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+            'description'           => $this->request->getPost('description', FILTER_SANITIZE_SPECIAL_CHARS),
             'category'              => $this->request->getPost('category'),
             'item_type'             => $itemType,
             'stock_type'            => $this->request->getPost('stock_type') === null ? HAS_STOCK : intval($this->request->getPost('stock_type')),
@@ -1169,7 +1169,7 @@ class Items extends Secure_Controller
                         $itemData = [
                             'item_id'       => $itemId,
                             'name'          => $row['Item Name'],
-                            'description'   => filter_var($row['Description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                            'description'   => filter_var($row['Description'], FILTER_SANITIZE_SPECIAL_CHARS),
                             'category'      => $row['Category'],
                             'cost_price'    => $row['Cost Price'],
                             'unit_price'    => $row['Unit Price'],
