@@ -95,10 +95,10 @@ class Cashups extends Secure_Controller
 
         if (!$isNew && !$isAdmin) {
             if ((int) $cashup->open_employee_id !== $employeeId) {
-                return $this->response->setStatusCode(403)->setBody('Accès refusé à cette session de caisse.');
+                return '<div class="alert alert-danger">Accès refusé à cette session de caisse.</div>';
             }
             if (!$isOpen) {
-                return $this->response->setStatusCode(403)->setBody('Seul un administrateur peut consulter ou corriger une session fermée.');
+                return '<div class="alert alert-danger">Seul un administrateur peut consulter ou corriger une session fermée.</div>';
             }
         }
 
