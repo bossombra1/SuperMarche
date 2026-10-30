@@ -145,7 +145,11 @@ class Cashups extends Secure_Controller
     public function getRow(int $row_id): ResponseInterface
     {
         $cash_ups_info = $this->cashup->get_info($row_id);
-        $data_row = get_cash_up_data_row($cash_ups_info);
+        $logged_in_employee = $this->employee->get_logged_in_employee_info();
+        $is_admin = $this->employee->isAdmin($logged_in_employee->person_id);
+        $can_close = isset($cash_ups_info->status) && (int) $cash_ups_info->status === 0
+            && ($is_admin || (int) $cash_ups_info->open_employee_id === (int) $logged_in_employee->person_id);
+        $data_row = get_cash_up_data_row($cash_ups_info, $is_admin, $can_close);
 
         return $this->response->setJSON($data_row);
     }
