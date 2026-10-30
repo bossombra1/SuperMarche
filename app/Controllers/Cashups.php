@@ -39,6 +39,9 @@ class Cashups extends Secure_Controller
         // Restore filters from URL
         $data = array_merge($data, restoreTableFilters($this->request));
 
+        $logged_in_employee = $this->employee->get_logged_in_employee_info();
+        $data['is_admin'] = $this->employee->isAdmin($logged_in_employee->person_id);
+
         return view('cashups/manage', $data);
     }
 
@@ -64,8 +67,11 @@ class Cashups extends Secure_Controller
         $cash_ups = $this->cashup->search($search, $filters, $limit, $offset, $sort, $order);
         $total_rows = $this->cashup->get_found_rows($search, $filters);
         $data_rows = [];
+        $logged_in_employee = $this->employee->get_logged_in_employee_info();
+        $allow_edit = $this->employee->isAdmin($logged_in_employee->person_id);
+
         foreach ($cash_ups->getResult() as $cash_up) {
-            $data_rows[] = get_cash_up_data_row($cash_up);
+            $data_rows[] = get_cash_up_data_row($cash_up, $allow_edit);
         }
 
         return $this->response->setJSON(['total' => $total_rows, 'rows' => $data_rows]);

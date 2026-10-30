@@ -895,7 +895,7 @@ function get_cashups_manage_table_headers(): string
 /**
  * Gets the html data row for the cashups
  */
-function get_cash_up_data_row(object $cash_up): array
+function get_cash_up_data_row(object $cash_up, bool $allow_edit = true): array
 {
     $controller = get_controller();
 
@@ -913,7 +913,7 @@ function get_cash_up_data_row(object $cash_up): array
         'closed_amount_card'   => to_currency($cash_up->closed_amount_card),
         'closed_amount_check'  => to_currency($cash_up->closed_amount_check),
         'closed_amount_total'  => to_currency($cash_up->closed_amount_total),
-        'edit'                 => anchor(
+        'edit' => $allow_edit ? anchor(
             "$controller/view/$cash_up->cashup_id",
             '<span class="glyphicon glyphicon-edit"></span>',
             [
@@ -921,7 +921,7 @@ function get_cash_up_data_row(object $cash_up): array
                 'data-btn-submit' => lang('Common.submit'),
                 'title'           => lang(ucfirst($controller) . ".update")
             ]
-        )
+        ) : ''
     ];
 }
 
