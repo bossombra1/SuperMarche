@@ -68,10 +68,12 @@ class Cashups extends Secure_Controller
         $total_rows = $this->cashup->get_found_rows($search, $filters);
         $data_rows = [];
         $logged_in_employee = $this->employee->get_logged_in_employee_info();
-        $allow_edit = $this->employee->isAdmin($logged_in_employee->person_id);
+        $is_admin = $this->employee->isAdmin($logged_in_employee->person_id);
 
         foreach ($cash_ups->getResult() as $cash_up) {
-            $data_rows[] = get_cash_up_data_row($cash_up, $allow_edit);
+            $can_close = isset($cash_up->status) && (int) $cash_up->status === 0
+                && ($is_admin || (int) $cash_up->open_employee_id === (int) $logged_in_employee->person_id);
+            $data_rows[] = get_cash_up_data_row($cash_up, $is_admin, $can_close);
         }
 
         return $this->response->setJSON(['total' => $total_rows, 'rows' => $data_rows]);
@@ -131,6 +133,7 @@ class Cashups extends Secure_Controller
             'employees' => $employees,
             'is_admin' => $isAdmin,
             'can_close' => $isOpen && ($isAdmin || (int) $cashup->open_employee_id === $employeeId),
+            'close_mode' => $this->request->getGet('mode') === 'close',
             'config' => $this->config
         ]);
     }
