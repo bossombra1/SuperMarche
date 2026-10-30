@@ -17,42 +17,67 @@ use App\Models\Employee;
 <?= view('partial/header') ?>
 
 <style>
-/* Mise en page limitée à la liste des articles. */
-#table_holder .fixed-table-container { overflow-x: hidden; }
-#table_holder .fixed-table-body { overflow-x: hidden; }
-#table_holder table { width: 100% !important; table-layout: fixed; }
-#table_holder th, #table_holder td {
-    padding: 6px 5px;
+/* Mise en page propre à la liste des articles. */
+#table_holder,
+#table_holder .bootstrap-table,
+#table_holder .fixed-table-container,
+#table_holder .fixed-table-body {
+    width: 100%;
+    max-width: 100%;
+}
+#table_holder .fixed-table-container,
+#table_holder .fixed-table-body {
+    overflow-x: auto;
+}
+#table_holder table {
+    width: 100% !important;
+    min-width: 1450px;
+    table-layout: auto;
+}
+#table_holder th,
+#table_holder td {
+    padding: 7px 6px;
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     vertical-align: middle;
     font-size: 12px;
 }
+/* Colonnes principales : largeurs adaptées au contenu. */
 #table_holder th[data-field="state"],
-#table_holder td.bs-checkbox { width: 30px !important; min-width: 30px; }
-#table_holder th[data-field="items.item_id"] { width: 4% !important; }
-#table_holder th[data-field="item_number"] { width: 9% !important; }
-#table_holder th[data-field="name"] { width: 17% !important; }
-#table_holder th[data-field="category"] { width: 10% !important; }
-#table_holder th[data-field="company_name"] { width: 12% !important; }
+#table_holder td.bs-checkbox { width: 32px !important; min-width: 32px; }
+#table_holder th[data-field="items.item_id"] { width: 55px !important; min-width: 55px; }
+#table_holder th[data-field="item_number"] { width: 95px !important; min-width: 95px; }
+#table_holder th[data-field="name"] { width: 190px !important; min-width: 150px; }
+#table_holder th[data-field="category"] { width: 120px !important; min-width: 100px; }
+#table_holder th[data-field="company_name"] { width: 145px !important; min-width: 120px; }
 #table_holder th[data-field="cost_price"],
-#table_holder th[data-field="unit_price"],
-#table_holder th[data-field="quantity"] { width: 7% !important; }
-#table_holder th[data-field="tax_percents"] { width: 8% !important; }
-#table_holder th[data-field="item_pic"] { width: 5% !important; }
+#table_holder th[data-field="unit_price"] { width: 105px !important; min-width: 95px; }
+#table_holder th[data-field="quantity"] { width: 75px !important; min-width: 65px; }
+#table_holder th[data-field="tax_percents"] { width: 105px !important; min-width: 95px; }
+#table_holder th[data-field="item_pic"] { width: 65px !important; min-width: 60px; }
+/* Attributs personnalisés (Marque, Date, Poids, Produit local, Conditionnement...). */
+#table_holder th[data-field]:not([data-field="state"]):not([data-field="items.item_id"]):not([data-field="item_number"]):not([data-field="name"]):not([data-field="category"]):not([data-field="company_name"]):not([data-field="cost_price"]):not([data-field="unit_price"]):not([data-field="quantity"]):not([data-field="tax_percents"]):not([data-field="item_pic"]):not([data-field="inventory"]):not([data-field="stock"]):not([data-field="edit"]) {
+    min-width: 95px;
+    width: 95px;
+}
+/* Actions compactes, sans sacrifier les colonnes d'informations. */
 #table_holder th[data-field="inventory"],
 #table_holder th[data-field="stock"],
 #table_holder th[data-field="edit"] { width: 38px !important; min-width: 38px; }
 #table_holder td[data-field="inventory"],
 #table_holder td[data-field="stock"],
-#table_holder td[data-field="edit"] { padding-left: 2px; padding-right: 2px; text-align: center; }
+#table_holder td[data-field="edit"] {
+    width: 38px;
+    min-width: 38px;
+    padding-left: 2px;
+    padding-right: 2px;
+    text-align: center;
+}
 #table_holder td[data-field="inventory"] a,
 #table_holder td[data-field="stock"] a,
 #table_holder td[data-field="edit"] a { display: inline-block; padding: 2px; }
 @media (max-width: 767px) {
-    #table_holder .fixed-table-container,
-    #table_holder .fixed-table-body { overflow-x: auto; }
-    #table_holder table { min-width: 1150px; }
+    #table_holder table { min-width: 1450px; }
 }
 </style>
 
