@@ -17,16 +17,8 @@ OSPOS_ENCRYPTION_KEY=<64 hexadecimal characters>
 OSPOS_THROTTLE_KEY=<64 hexadecimal characters>
 ```
 
-Generate two independent values once in PowerShell, from the repository root:
-
-```powershell
-$encryptionKey = -join (1..32 | ForEach-Object { '{0:x2}' -f (Get-Random -Maximum 256) })
-$throttleKey = -join (1..32 | ForEach-Object { '{0:x2}' -f (Get-Random -Maximum 256) })
-```
-
-Use a cryptographically secure generator instead of PowerShell's
-`Get-Random` for production deployments. For a secure Windows PowerShell
-generation, use PHP if installed:
+Generate two independent values once, from the repository root, using PHP's
+cryptographically secure random generator (run the command twice):
 
 ```powershell
 php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
