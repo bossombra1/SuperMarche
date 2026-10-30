@@ -69,9 +69,11 @@
 
 <div id="toolbar">
     <div class="pull-left form-inline" role="toolbar">
+        <?php if (!empty($is_admin)): ?>
         <button id="delete" class="btn btn-default btn-sm print_hide">
             <span class="glyphicon glyphicon-trash">&nbsp;</span><?= lang('Common.delete') ?>
         </button>
+        <?php endif; ?>
         <?= form_input(['name' => 'daterangepicker', 'class' => 'form-control input-sm', 'id' => 'daterangepicker']) ?>
         <?= form_multiselect('filters[]', $filters, $selected_filters ?? [], [
             'id'                        => 'filters',
