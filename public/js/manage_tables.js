@@ -88,7 +88,16 @@
                 // Charger le formulaire avant de remplacer le contenu du dialogue.
                 $.get($link.attr('href') || $link.data('href'))
                     .done(function(data) {
+                        // Conserver et exécuter les scripts du formulaire injecté dans la modale.
+                        const scripts = $('<div>').html(data).find('script').map(function() {
+                            return this.text || this.textContent || this.innerHTML || '';
+                        }).get();
                         dialog.setMessage(data);
+                        scripts.forEach(function(script) {
+                            if (script.trim()) {
+                                $.globalEval(script);
+                            }
+                        });
                     })
                     .fail(function() {
                         dialog.setMessage('<div class="alert alert-danger">Impossible de charger le formulaire. Vérifiez votre session et réessayez.</div>');
