@@ -35,6 +35,7 @@ class Cashups extends Secure_Controller
 
         // filters that will be loaded in the multiselect dropdown
         $data['filters'] = ['is_deleted' => lang('Cashups.is_deleted')];
+        $data['cashup_statuses'] = ['all' => 'Toutes les caisses', 'open' => 'Caisses ouvertes', 'closed' => 'Caisses clôturées'];
 
         // Restore filters from URL
         $data = array_merge($data, restoreTableFilters($this->request));
@@ -58,7 +59,8 @@ class Cashups extends Secure_Controller
         $filters = [
             'start_date' => $this->request->getGet('start_date', FILTER_SANITIZE_SPECIAL_CHARS),    // TODO: Is this the best way to filter dates
             'end_date'   => $this->request->getGet('end_date', FILTER_SANITIZE_SPECIAL_CHARS),
-            'is_deleted' => false
+            'is_deleted' => false,
+            'status' => $this->request->getGet('status', FILTER_SANITIZE_SPECIAL_CHARS) ?? 'all'
         ];
 
         // Check if any filter is set in the multiselect dropdown
