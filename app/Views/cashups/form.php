@@ -13,6 +13,10 @@
 <?php
 $isNewCashup = empty($cash_ups_info->cashup_id) || $cash_ups_info->cashup_id == NEW_ENTRY;
 $isClosedCashup = isset($cash_ups_info->status) && (int) $cash_ups_info->status === 1;
+$isOpenCashup = !$isNewCashup && !$isClosedCashup;
+$isAdmin = !empty($is_admin);
+$canClose = !empty($can_close) && $isOpenCashup;
+$closeMode = !empty($close_mode);
 ?>
 
 <?= form_open('cashups/save/' . $cash_ups_info->cashup_id, ['id' => 'cashups_edit_form', 'class' => 'form-horizontal'])    // TODO: String Interpolation ?>
@@ -42,7 +46,7 @@ $isClosedCashup = isset($cash_ups_info->status) && (int) $cash_ups_info->status 
                         'name'     => 'open_date',
                         'id'       => 'open_date',
                         'class'    => 'form-control input-sm datepicker',
-                        'readonly' => $isClosedCashup ? 'readonly' : null,
+                        'readonly' => ($isClosedCashup || !$isAdmin) ? 'readonly' : null,
                         'value'    => to_datetime(strtotime($cash_ups_info->open_date))
                     ]) ?>
                 </div>
@@ -69,6 +73,7 @@ $isClosedCashup = isset($cash_ups_info->status) && (int) $cash_ups_info->status 
                         'name'  => 'open_amount_cash',
                         'id'    => 'open_amount_cash',
                         'class' => 'form-control input-sm',
+                        'readonly' => !$isAdmin ? 'readonly' : null,
                         'value' => to_currency_no_money($cash_ups_info->open_amount_cash)
                     ]) ?>
                     <?php if (is_right_side_currency_symbol()): ?>
@@ -260,14 +265,18 @@ $isClosedCashup = isset($cash_ups_info->status) && (int) $cash_ups_info->status 
                 </div>
             </div>
         <?php } ?>
-        <?= form_hidden('close_session', '0') ?>
+        <?= form_hidden('close_session', ($closeMode || (!$isAdmin && $canClose)) ? '1' : '0') ?>
         <div class="form-group form-group-sm">
             <div class="col-xs-offset-3 col-xs-9">
                 <?php if ($isNewCashup): ?>
                     <span class="text-muted">Ouvrir la caisse depuis Ventes</span>
                 <?php elseif ($isOpenCashup): ?>
-                    <button type="submit" class="btn btn-default">Enregistrer</button>
-                    <button type="submit" name="close_session" value="1" class="btn btn-danger">Fermer la caisse</button>
+                    <?php if ($isAdmin && !$closeMode): ?>
+                        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                        <a href="<?= site_url('cashups/view/' . $cash_ups_info->cashup_id . '?mode=close') ?>" class="btn btn-danger modal-dlg" data-btn-submit="Confirmer la fermeture" title="Fermer la caisse">Fermer la caisse</a>
+                    <?php elseif ($canClose): ?>
+                        <button type="submit" class="btn btn-danger">Confirmer la fermeture</button>
+                    <?php endif; ?>
                 <?php else: ?>
                     <span class="text-muted">Session fermée</span>
                 <?php endif; ?>
