@@ -17,6 +17,9 @@
         $('#filters').on('hidden.bs.select', function(e) {
             table_support.refresh();
         });
+        $('#cashup_status').on('change', function() {
+            table_support.refresh();
+        });
 
         // Load the preset datarange picker
         <?= view('partial/daterangepicker') ?>
@@ -42,6 +45,7 @@
             uniqueId: 'cashup_id',
             queryParams: function() {
                 return $.extend(arguments[0], {
+                    "status": $('#cashup_status').val(),
                     "end_date": end_date,
                     "filters": $("#filters").val(),
                     "start_date": start_date
@@ -75,6 +79,7 @@
         </button>
         <?php endif; ?>
         <?= form_input(['name' => 'daterangepicker', 'class' => 'form-control input-sm', 'id' => 'daterangepicker']) ?>
+        <?= form_dropdown('cashup_status', $cashup_statuses ?? [], 'all', ['id' => 'cashup_status', 'class' => 'form-control input-sm']) ?>
         <?= form_multiselect('filters[]', $filters, $selected_filters ?? [], [
             'id'                        => 'filters',
             'data-none-selected-text'   => lang('Common.none_selected_text'),
