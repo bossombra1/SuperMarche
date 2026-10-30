@@ -90,3 +90,7 @@ auth.json
 /app/Database/database.sql
 /writable/cache/*
 /.env.bak
+
+.env.docker
+
+.env.docker.runtime
