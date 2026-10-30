@@ -144,10 +144,25 @@ class Cashup extends Model
             $builder->where('cash_up.status', 1);
         }
 
-        if (empty($config['date_or_time_format'])) {    // TODO: convert this to ternary notation.
-            $builder->where('DATE_FORMAT(cash_up.open_date, "%Y-%m-%d") BETWEEN ' . $this->db->escape($filters['start_date']) . ' AND ' . $this->db->escape($filters['end_date']));
+        // Include a cashup when either its opening date or its closing date
+        // falls inside the selected period. This keeps sessions visible when
+        // they are opened before midnight and closed on the following day.
+        if (empty($config['date_or_time_format'])) {
+            $startDate = $this->db->escape($filters['start_date']);
+            $endDate = $this->db->escape($filters['end_date']);
+
+            $builder->groupStart()
+                ->where('DATE_FORMAT(cash_up.open_date, "%Y-%m-%d") BETWEEN ' . $startDate . ' AND ' . $endDate)
+                ->orWhere('DATE_FORMAT(cash_up.close_date, "%Y-%m-%d") BETWEEN ' . $startDate . ' AND ' . $endDate)
+                ->groupEnd();
         } else {
-            $builder->where('cash_up.open_date BETWEEN ' . $this->db->escape(rawurldecode($filters['start_date'])) . ' AND ' . $this->db->escape(rawurldecode($filters['end_date'])));
+            $startDate = $this->db->escape(rawurldecode($filters['start_date']));
+            $endDate = $this->db->escape(rawurldecode($filters['end_date']));
+
+            $builder->groupStart()
+                ->where('cash_up.open_date BETWEEN ' . $startDate . ' AND ' . $endDate)
+                ->orWhere('cash_up.close_date BETWEEN ' . $startDate . ' AND ' . $endDate)
+                ->groupEnd();
         }
 
         // get_found_rows case
