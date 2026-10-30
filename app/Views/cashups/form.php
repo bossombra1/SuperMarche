@@ -277,6 +277,8 @@ $closeMode = !empty($close_mode);
                     <?php elseif ($canClose): ?>
                         <button type="submit" class="btn btn-danger">Confirmer la fermeture</button>
                     <?php endif; ?>
+                <?php elseif ($isClosedCashup && $isAdmin): ?>
+                    <button type="submit" class="btn btn-primary">Enregistrer les corrections administratives</button>
                 <?php else: ?>
                     <span class="text-muted">Session fermée</span>
                 <?php endif; ?>
