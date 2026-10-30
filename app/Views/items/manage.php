@@ -16,6 +16,46 @@ use App\Models\Employee;
 
 <?= view('partial/header') ?>
 
+<style>
+/* Mise en page limitée à la liste des articles. */
+#table_holder .fixed-table-container { overflow-x: hidden; }
+#table_holder .fixed-table-body { overflow-x: hidden; }
+#table_holder table { width: 100% !important; table-layout: fixed; }
+#table_holder th, #table_holder td {
+    padding: 6px 5px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    vertical-align: middle;
+    font-size: 12px;
+}
+#table_holder th[data-field="state"],
+#table_holder td.bs-checkbox { width: 30px !important; min-width: 30px; }
+#table_holder th[data-field="items.item_id"] { width: 4% !important; }
+#table_holder th[data-field="item_number"] { width: 9% !important; }
+#table_holder th[data-field="name"] { width: 17% !important; }
+#table_holder th[data-field="category"] { width: 10% !important; }
+#table_holder th[data-field="company_name"] { width: 12% !important; }
+#table_holder th[data-field="cost_price"],
+#table_holder th[data-field="unit_price"],
+#table_holder th[data-field="quantity"] { width: 7% !important; }
+#table_holder th[data-field="tax_percents"] { width: 8% !important; }
+#table_holder th[data-field="item_pic"] { width: 5% !important; }
+#table_holder th[data-field="inventory"],
+#table_holder th[data-field="stock"],
+#table_holder th[data-field="edit"] { width: 38px !important; min-width: 38px; }
+#table_holder td[data-field="inventory"],
+#table_holder td[data-field="stock"],
+#table_holder td[data-field="edit"] { padding-left: 2px; padding-right: 2px; text-align: center; }
+#table_holder td[data-field="inventory"] a,
+#table_holder td[data-field="stock"] a,
+#table_holder td[data-field="edit"] a { display: inline-block; padding: 2px; }
+@media (max-width: 767px) {
+    #table_holder .fixed-table-container,
+    #table_holder .fixed-table-body { overflow-x: auto; }
+    #table_holder table { min-width: 1150px; }
+}
+</style>
+
 <script type="text/javascript">
     $(document).ready(function() {
         $('#generate_barcodes').click(function() {
