@@ -877,7 +877,8 @@ function cashup_headers(): array
         ['closed_amount_due'    => lang('Cashups.closed_amount_due')],
         ['closed_amount_card'   => lang('Cashups.closed_amount_card')],
         ['closed_amount_check'  => lang('Cashups.closed_amount_check')],
-        ['closed_amount_total'  => lang('Cashups.closed_amount_total')]
+        ['closed_amount_total'  => lang('Cashups.closed_amount_total')],
+        ['close_action'         => 'Action']
     ];
 }
 
@@ -895,7 +896,7 @@ function get_cashups_manage_table_headers(): string
 /**
  * Gets the html data row for the cashups
  */
-function get_cash_up_data_row(object $cash_up, bool $allow_edit = true): array
+function get_cash_up_data_row(object $cash_up, bool $allow_edit = true, bool $can_close = false): array
 {
     $controller = get_controller();
 
@@ -913,6 +914,15 @@ function get_cash_up_data_row(object $cash_up, bool $allow_edit = true): array
         'closed_amount_card'   => to_currency($cash_up->closed_amount_card),
         'closed_amount_check'  => to_currency($cash_up->closed_amount_check),
         'closed_amount_total'  => to_currency($cash_up->closed_amount_total),
+        'close_action' => ($can_close && isset($cash_up->status) && (int) $cash_up->status === 0) ? anchor(
+            "$controller/view/$cash_up->cashup_id?mode=close",
+            '<span class="glyphicon glyphicon-lock"></span> Fermer',
+            [
+                'class' => 'modal-dlg',
+                'data-btn-submit' => 'Confirmer la fermeture',
+                'title' => 'Fermer la caisse'
+            ]
+        ) : '',
         'edit' => $allow_edit ? anchor(
             "$controller/view/$cash_up->cashup_id",
             '<span class="glyphicon glyphicon-edit"></span>',
