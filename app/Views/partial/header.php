@@ -102,6 +102,45 @@ $request = Services::request();
         html {
             overflow: auto;
         }
+
+        /* Give management tables more room and fit their columns to the screen. */
+        @media (min-width: 768px) {
+            .wrapper > .container {
+                width: 98%;
+                max-width: none;
+            }
+        }
+
+        #table_holder,
+        #table_holder .bootstrap-table,
+        #table_holder .fixed-table-container {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        #table_holder .fixed-table-container {
+            overflow-x: hidden;
+        }
+
+        #table_holder table {
+            width: 100% !important;
+            table-layout: fixed;
+        }
+
+        #table_holder th,
+        #table_holder td {
+            padding: 6px 4px;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 767px) {
+            #table_holder .fixed-table-container {
+                overflow-x: auto;
+            }
+        }
     </style>
 </head>
 
