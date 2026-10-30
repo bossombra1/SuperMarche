@@ -80,16 +80,19 @@
             return $(selector).off('click').on('click', function(event) {
                 let $link = $(event.target);
                 $link = !$link.is("a, button") ? $link.parents("a, button") : $link ;
-                BootstrapDialog.show($.extend({
+                const dialog = BootstrapDialog.show($.extend({
                     title: $link.attr('title'),
-                    message: (function() {
-                        const node = $('<div></div>');
-                        $.get($link.attr('href') || $link.data('href'), function(data) {
-                            node.html(data);
-                        });
-                        return node;
-                    })
+                    message: $('<div class="text-center">Chargement du formulaire...</div>')
                 }, buttons.call(this, event)));
+
+                // Charger le formulaire avant de remplacer le contenu du dialogue.
+                $.get($link.attr('href') || $link.data('href'))
+                    .done(function(data) {
+                        dialog.setMessage(data);
+                    })
+                    .fail(function() {
+                        dialog.setMessage('<div class="alert alert-danger">Impossible de charger le formulaire. Vérifiez votre session et réessayez.</div>');
+                    });
 
                 return false;
             });
