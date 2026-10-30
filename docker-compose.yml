@@ -11,7 +11,7 @@ services:
             - "80:80"
         networks:
             - app_net
-        command: ["sh", "-c", "php spark env:provision && exec apache2-foreground"]
+        command: ["apache2-foreground"]
         volumes:
             # .env holds the two runtime-generated secrets (encryption.key +
             # throttle.key), persisted as a single host file so the same keys
@@ -22,6 +22,7 @@ services:
             - type: bind
               source: ./.env
               target: /app/.env
+              read_only: true
               bind:
                   create_host_path: false
             - uploads:/app/public/uploads
@@ -35,3 +36,6 @@ services:
             - MYSQL_PASSWORD=pointofsale
             - MYSQL_DB_NAME=ospos
             - MYSQL_HOST_NAME=mysql
+            # Stable secrets are supplied by .env.docker and override .env.
+            - ENCRYPTION_KEY=${OSPOS_ENCRYPTION_KEY:?Set OSPOS_ENCRYPTION_KEY in .env.docker}
+            - THROTTLE_KEY=${OSPOS_THROTTLE_KEY:?Set OSPOS_THROTTLE_KEY in .env.docker}
