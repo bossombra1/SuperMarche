@@ -273,7 +273,7 @@ $closeMode = !empty($close_mode);
                 <?php elseif ($isOpenCashup): ?>
                     <?php if ($isAdmin && !$closeMode): ?>
                         <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
-                        <a href="<?= site_url('cashups/view/' . $cash_ups_info->cashup_id . '?mode=close') ?>" class="btn btn-danger modal-dlg" data-btn-submit="Confirmer la fermeture" title="Fermer la caisse">Fermer la caisse</a>
+                        <span class="text-muted">Pour fermer cette caisse, utilisez l'action « Fermer » dans la liste des sessions.</span>
                     <?php elseif ($canClose): ?>
                         <button type="submit" class="btn btn-danger">Confirmer la fermeture</button>
                     <?php endif; ?>
