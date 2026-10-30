@@ -7,6 +7,7 @@ use App\Libraries\Email_lib;
 use App\Libraries\Sale_lib;
 use App\Libraries\Tax_lib;
 use App\Libraries\Token_lib;
+use App\Models\Cashup;
 use App\Models\Customer;
 use App\Models\Customer_rewards;
 use App\Models\Dinner_table;
@@ -78,7 +79,52 @@ class Sales extends Secure_Controller
      * @return ResponseInterface|string
      * @noinspection PhpUnused
      */
+    public function postOpenCashup(): ResponseInterface
+    {
+        $employeeId = $this->employee->get_logged_in_employee_info()->person_id;
+
+        $db = db_connect();
+        $db->transStart();
+
+        // Serialize concurrent openings for the same employee.
+        $db->query('SELECT person_id FROM ' . $db->prefixTable('employees') . ' WHERE person_id = ? FOR UPDATE', [$employeeId]);
+
+        if (model(Cashup::class)->has_open_cashup($employeeId)) {
+            $db->transRollback();
+            return $this->response->setJSON(['success' => false, 'message' => 'Une session de caisse est déjà ouverte pour cet employé.']);
+        }
+
+        $cashupData = [
+            'open_date'            => date('Y-m-d H:i:s'),
+            'close_date'           => null,
+            'open_amount_cash'     => parse_decimals($this->request->getPost('open_amount_cash')),
+            'transfer_amount_cash' => parse_decimals($this->request->getPost('transfer_amount_cash')),
+            'closed_amount_cash'   => 0,
+            'closed_amount_due'    => 0,
+            'closed_amount_card'   => 0,
+            'closed_amount_check'  => 0,
+            'closed_amount_total'  => 0,
+            'note'                 => $this->request->getPost('note') != null,
+            'description'          => $this->request->getPost('description', FILTER_SANITIZE_SPECIAL_CHARS),
+            'open_employee_id'     => $employeeId,
+            'close_employee_id'    => null,
+            'deleted'              => false,
+            'status'               => 0,
+        ];
+
+        if (model(Cashup::class)->save_value($cashupData, NEW_ENTRY)) {
+            $db->transComplete();
+            if (!$db->transStatus()) {
+                return $this->response->setJSON(['success' => false, 'message' => lang('Cashups.error_adding_updating')]);
+            }
+            return $this->response->setJSON(['success' => true, 'message' => 'Session ouverte.', 'id' => $cashupData['cashup_id']]);
+        }
+
+        $db->transRollback();
+        return $this->response->setJSON(['success' => false, 'message' => lang('Cashups.error_adding_updating')]);
+    }
     public function getManage(): ResponseInterface|string
+
     {
         $personId = $this->session->get('person_id');
 
@@ -876,6 +922,12 @@ class Sales extends Secure_Controller
             } else {
                 $data['invoice_number'] = $invoiceNumber;
                 $data['sale_status'] = COMPLETED;
+                $cashup = model(Cashup::class)->get_open_cashup($employeeId);
+                $cashupId = $cashup ? (int) $cashup->cashup_id : null;
+                if ($cashupId === null) {
+                    $data['error_message'] = 'Aucune session de caisse ouverte.';
+                    return $this->reload($data);
+                }
                 $saleType = SALE_TYPE_INVOICE;
 
                 $invoiceType = $this->config['invoice_type'];
@@ -884,8 +936,7 @@ class Sales extends Secure_Controller
                 }
                 $invoiceView = $invoiceType;
 
-                // Save the data to the sales table
-                $data['sale_id_num'] = $this->sale->save_value($saleId, $data['sale_status'], $data['cart'], $customerId, $employeeId, $data['comments'], $invoiceNumber, $workOrderNumber, $quoteNumber, $saleType, $data['payments'], $data['dinner_table'], $taxDetails);
+                $data['sale_id_num'] = $this->sale->save_value($saleId, $data['sale_status'], $data['cart'], $customerId, $employeeId, $data['comments'], $invoiceNumber, $workOrderNumber, $quoteNumber, $saleType, $data['payments'], $data['dinner_table'], $taxDetails, $cashupId);
                 $data['sale_id'] = 'POS ' . $data['sale_id_num'];
 
                 // Resort and filter cart lines for printing
@@ -1002,13 +1053,19 @@ class Sales extends Secure_Controller
         } else {
             // Save the data to the sales table
             $data['sale_status'] = COMPLETED;
+            $cashup = model(Cashup::class)->get_open_cashup($employeeId);
+            $cashupId = $cashup ? (int) $cashup->cashup_id : null;
+            if ($cashupId === null) {
+                $data['error_message'] = 'Aucune session de caisse ouverte.';
+                return $this->reload($data);
+            }
             if ($this->sale_lib->is_return_mode()) {
                 $saleType = SALE_TYPE_RETURN;
             } else {
                 $saleType = SALE_TYPE_POS;
             }
 
-            $data['sale_id_num'] = $this->sale->save_value($saleId, $data['sale_status'], $data['cart'], $customerId, $employeeId, $data['comments'], $invoiceNumber, $workOrderNumber, $quoteNumber, $saleType, $data['payments'], $data['dinner_table'], $taxDetails);
+            $data['sale_id_num'] = $this->sale->save_value($saleId, $data['sale_status'], $data['cart'], $customerId, $employeeId, $data['comments'], $invoiceNumber, $workOrderNumber, $quoteNumber, $saleType, $data['payments'], $data['dinner_table'], $taxDetails, $cashupId);
 
             $data['sale_id'] = 'POS ' . $data['sale_id_num'];
 
@@ -1422,6 +1479,9 @@ class Sales extends Secure_Controller
             $data['mode_label'] = lang('Sales.receipt');
             $data['customer_required'] = lang('Sales.customer_optional');
         }
+
+        $employeeId = $this->employee->get_logged_in_employee_info()->person_id;
+        $data['open_cashup'] = model(Cashup::class)->get_open_cashup($employeeId);
 
         return view("sales/register", $data);
     }

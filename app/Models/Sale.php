@@ -530,7 +530,8 @@ class Sale extends Model
         int     $saleType,
         ?array  $payments,
         ?int    $dinnerTableId,
-        ?array  &$salesTaxes
+        ?array  &$salesTaxes,
+        ?int    $cashupId = null
     ): int {    // TODO: this method returns the sale_id but the override is expecting it to return a bool. The signature needs to be reworked.  Generally when there are more than 3 maybe 4 parameters, there's a good chance that an object needs to be passed rather than so many params.
         $config = config(OSPOS::class)->settings;
         $attribute = model(Attribute::class);
@@ -555,7 +556,8 @@ class Sale extends Model
             'quote_number'      => $quoteNumber,
             'work_order_number' => $workOrderNumber,
             'dinner_table_id'   => $dinnerTableId,
-            'sale_type'         => $saleType
+            'sale_type'         => $saleType,
+            'cashup_id'         => $cashupId
         ];
 
         // Run these queries as a transaction, we want to make sure we do all or nothing
@@ -605,6 +607,7 @@ class Sale extends Model
                 'cash_adjustment' => $payment['cash_adjustment'] ?? 0,
                 'employee_id'     => $employeeId,
                 'reference_code'  => $payment['reference_code'] ?? '',
+                'cashup_id'       => $cashupId,
             ];
 
             $builder = $this->db->table('sales_payments');

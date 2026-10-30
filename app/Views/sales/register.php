@@ -43,6 +43,8 @@ use App\Models\Employee;
 
 ?>
 
+
+
 <?= view('partial/header') ?>
 
 <?php
@@ -973,5 +975,57 @@ helper('url');
         }
     }
 </script>
+
+<?php if (empty($open_cashup)): ?>
+<div class="modal fade" id="open_cashup_modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Ouverture de caisse</h4>
+            </div>
+            <div class="modal-body">
+                <?= form_open('sales/openCashup', ['id' => 'open_cashup_form', 'class' => 'form-horizontal']) ?>
+                    <div class="form-group">
+                        <label class="control-label col-sm-4">Montant initial (FCFA)</label>
+                        <div class="col-sm-8">
+                            <?= form_input(['name' => 'open_amount_cash', 'class' => 'form-control', 'value' => '0']) ?>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-4">Transferts</label>
+                        <div class="col-sm-8">
+                            <?= form_input(['name' => 'transfer_amount_cash', 'class' => 'form-control', 'value' => '0']) ?>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-4">Notes</label>
+                        <div class="col-sm-8">
+                            <?= form_input(['name' => 'description', 'class' => 'form-control']) ?>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ouvrir la caisse</button>
+                <?= form_close() ?>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+$(function () {
+    $('#open_cashup_modal').modal({ backdrop: 'static', keyboard: false }).modal('show');
+    $('#open_cashup_form').on('submit', function (e) {
+        e.preventDefault();
+        $.post($(this).attr('action'), $(this).serialize(), function (response) {
+            if (response && response.success) {
+                window.location.reload();
+            } else {
+                alert((response && response.message) ? response.message : 'Erreur lors de l\'ouverture de la caisse.');
+            }
+        }, 'json').fail(function () {
+            alert('Erreur lors de l\'ouverture de la caisse.');
+        });
+    });
+});
+</script>
+<?php endif; ?>
 
 <?= view('partial/footer') ?>

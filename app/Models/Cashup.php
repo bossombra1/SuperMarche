@@ -31,7 +31,8 @@ class Cashup extends Model
         'open_employee_id',
         'close_employee_id',
         'deleted',
-        'closed_amount_due'
+        'closed_amount_due',
+        'status'
     ];
 
     /**
@@ -245,8 +246,86 @@ class Cashup extends Model
     }
 
     /**
-     * Deletes a list of cashups
+     * Returns the currently open cashup for an employee, if any.
      */
+    public function get_open_cashup(int $employee_id): ?object
+    {
+        $builder = $this->db->table('cash_up');
+        $builder->where('open_employee_id', $employee_id);
+        $builder->where('status', 0);
+        $builder->where('deleted', 0);
+        $builder->orderBy('cashup_id', 'desc');
+        $row = $builder->get()->getRow();
+
+        return $row ?: null;
+    }
+
+    public function has_open_cashup(int $employee_id): bool
+    {
+        return $this->get_open_cashup($employee_id) !== null;
+    }
+
+    public function is_closed(int $cashup_id): bool
+    {
+        $info = $this->get_info($cashup_id);
+
+        return isset($info->status) && (int) $info->status === 1;
+    }
+
+    public function close_cashup(int $cashup_id, int $employee_id): bool
+    {
+        $builder = $this->db->table('cash_up');
+        $builder->where('cashup_id', $cashup_id);
+        $builder->where('status', 0);
+
+        return (bool) $builder->update([
+            'status'            => 1,
+            'close_date'        => date('Y-m-d H:i:s'),
+            'close_employee_id' => $employee_id,
+        ]);
+    }
+    public function has_linked_sales(int $cashup_id): bool
+    {
+        $builder = $this->db->table('sales');
+        $builder->where('cashup_id', $cashup_id);
+
+        return $builder->countAllResults() > 0;
+    }
+
+    /**
+     * @return array{cash: float, due: float, card: float, check: float}
+     */
+    public function get_linked_payment_totals(int $cashup_id): array
+    {
+        $totals = ['cash' => 0.0, 'due' => 0.0, 'card' => 0.0, 'check' => 0.0];
+
+        $builder = $this->db->table('sales_payments AS payments');
+        $builder->select('payments.payment_type, SUM(payments.payment_amount) AS amount, SUM(payments.cash_refund) AS refunded');
+        $builder->join('sales', 'sales.sale_id = payments.sale_id');
+        $builder->where('sales.cashup_id', $cashup_id);
+        $builder->where('sales.sale_status', COMPLETED);
+        $builder->groupBy('payments.payment_type');
+
+        foreach ($builder->get()->getResult() as $row) {
+            $amount = (float) $row->amount - (float) $row->refunded;
+            $type = $row->payment_type;
+
+            if ($type === lang('Sales.cash')) {
+                $totals['cash'] += $amount;
+            } elseif ($type === lang('Sales.due')) {
+                $totals['due'] += $amount;
+            } elseif ($type === lang('Sales.debit') || $type === lang('Sales.credit')) {
+                $totals['card'] += $amount;
+            } elseif ($type === lang('Sales.check')) {
+                $totals['check'] += $amount;
+            } elseif (str_contains($type, lang('Sales.giftcard'))) {
+                $totals['card'] += $amount;
+            }
+        }
+
+        return $totals;
+    }
+
     public function delete_list(array $cashup_ids): bool
     {
         // Run these queries as a transaction, we want to make sure we do all or nothing

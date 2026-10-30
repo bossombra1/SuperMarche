@@ -10,6 +10,11 @@
 <div id="required_fields_message"><?= lang('Common.fields_required_message') ?></div>
 <ul id="error_message_box" class="error_message_box"></ul>
 
+<?php
+$isNewCashup = empty($cash_ups_info->cashup_id) || $cash_ups_info->cashup_id == NEW_ENTRY;
+$isClosedCashup = isset($cash_ups_info->status) && (int) $cash_ups_info->status === 1;
+?>
+
 <?= form_open('cashups/save/' . $cash_ups_info->cashup_id, ['id' => 'cashups_edit_form', 'class' => 'form-horizontal'])    // TODO: String Interpolation ?>
     <fieldset id="item_basic_info">
 
@@ -19,6 +24,14 @@
         </div>
 
         <div class="form-group form-group-sm">
+            <?= form_label('État', 'cashup_status', ['class' => 'control-label col-xs-3']) ?>
+            <div class="col-xs-6">
+                <p class="form-control-static">
+                    <?= $isNewCashup ? 'Nouvelle session' : ($isClosedCashup ? 'Session fermée' : 'Session ouverte') ?>
+                </p>
+            </div>
+        </div>
+        <div class="form-group form-group-sm">
             <?= form_label(lang('Cashups.open_date'), 'open_date', ['class' => 'control-label col-xs-3 text-danger required']) ?>
             <div class="col-xs-6">
                 <div class="input-group">
@@ -26,14 +39,17 @@
                         <span class="glyphicon glyphicon-calendar"></span>
                     </span>
                     <?= form_input([
-                        'name'  => 'open_date',
-                        'id'    => 'open_date',
-                        'class' => 'form-control input-sm datepicker',
-                        'value' => to_datetime(strtotime($cash_ups_info->open_date))
+                        'name'     => 'open_date',
+                        'id'       => 'open_date',
+                        'class'    => 'form-control input-sm datepicker',
+                        'readonly' => $isClosedCashup ? 'readonly' : null,
+                        'value'    => to_datetime(strtotime($cash_ups_info->open_date))
                     ]) ?>
                 </div>
             </div>
         </div>
+
+
 
         <div class="form-group form-group-sm">
             <?= form_label(lang('Cashups.open_employee'), 'open_employee', ['class' => 'control-label col-xs-3']) ?>
@@ -244,6 +260,20 @@
                 </div>
             </div>
         <?php } ?>
+        <?= form_hidden('close_session', '0') ?>
+        <div class="form-group form-group-sm">
+            <div class="col-xs-offset-3 col-xs-9">
+                <?php if ($isNewCashup): ?>
+                    <span class="text-muted">Ouvrir la caisse depuis Ventes</span>
+                <?php elseif ($isOpenCashup): ?>
+                    <button type="submit" class="btn btn-default">Enregistrer</button>
+                    <button type="submit" name="close_session" value="1" class="btn btn-danger">Fermer la caisse</button>
+                <?php else: ?>
+                    <span class="text-muted">Session fermée</span>
+                <?php endif; ?>
+            </div>
+        </div>
+
     </fieldset>
 <?= form_close() ?>
 
