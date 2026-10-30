@@ -83,163 +83,56 @@ class Cashups extends Secure_Controller
      */
     public function getView(int $cashup_id = NEW_ENTRY): string
     {
-        $data = [];
+        $loggedIn = $this->employee->get_logged_in_employee_info();
+        $employeeId = (int) $loggedIn->person_id;
+        $isAdmin = $this->employee->isAdmin($employeeId);
 
-        $data['employees'] = [];
+        $cashup = $this->cashup->get_info($cashup_id);
+        $isNew = ($cashup_id === NEW_ENTRY || (int) ($cashup->cashup_id ?? NEW_ENTRY) === NEW_ENTRY);
+        $isOpen = !$isNew && isset($cashup->status) && (int) $cashup->status === 0;
+
+        if (!$isNew && !$isAdmin) {
+            if ((int) $cashup->open_employee_id !== $employeeId) {
+                return $this->response->setStatusCode(403)->setBody('Accès refusé à cette session de caisse.');
+            }
+            if (!$isOpen) {
+                return $this->response->setStatusCode(403)->setBody('Seul un administrateur peut consulter ou corriger une session fermée.');
+            }
+        }
+
+        $employees = [];
         foreach ($this->employee->get_all()->getResult() as $employee) {
-            foreach (get_object_vars($employee) as $property => $value) {
-                $employee->$property = $value;
-            }
-
-            $data['employees'][$employee->person_id] = $employee->first_name . ' ' . $employee->last_name;
+            $employees[$employee->person_id] = $employee->first_name . ' ' . $employee->last_name;
         }
 
-        $cash_ups_info = $this->cashup->get_info($cashup_id);
-
-        foreach (get_object_vars($cash_ups_info) as $property => $value) {
-            $cash_ups_info->$property = $value;
+        if ($isOpen) {
+            // Préremplir les montants attendus à partir des paiements réellement liés à cette session.
+            $totals = $this->cashup->get_linked_payment_totals($cashup_id);
+            $cashup->closed_amount_cash = (float) $cashup->open_amount_cash
+                + (float) $cashup->transfer_amount_cash + $totals['cash'];
+            $cashup->closed_amount_due = $totals['due'];
+            $cashup->closed_amount_card = $totals['card'];
+            $cashup->closed_amount_check = $totals['check'];
+            $cashup->closed_amount_total = $this->_calculate_total(
+                (float) $cashup->open_amount_cash,
+                (float) $cashup->transfer_amount_cash,
+                (float) $cashup->closed_amount_due,
+                (float) $cashup->closed_amount_cash,
+                (float) $cashup->closed_amount_card,
+                (float) $cashup->closed_amount_check
+            );
+            // Une session ouverte ne doit jamais afficher des informations de clôture prématurées.
+            $cashup->close_date = null;
+            $cashup->close_employee_id = null;
         }
 
-        // Open cashup
-        if ($cash_ups_info->cashup_id == NEW_ENTRY) {
-            $logged_in_employee = $this->employee->get_logged_in_employee_info();
-        $is_admin = $this->employee->isAdmin($logged_in_employee->person_id);
-
-        // Only administrators may modify or delete cashup sessions.
-        if ($cashup_id !== NEW_ENTRY) {
-            $existing = $this->cashup->get_info($cashup_id);
-
-            if ($this->cashup->is_closed($cashup_id) && !$is_admin) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Cette session est fermée. Seul un administrateur peut la corriger.', 'id' => $cashup_id]);
-            }
-
-            if (!$this->cashup->is_closed($cashup_id)) {
-                $is_owner = ((int) $existing->open_employee_id === (int) $logged_in_employee->person_id);
-
-                if (!$is_admin && !$is_owner) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Vous ne pouvez pas modifier la session d\'un autre employé.', 'id' => $cashup_id]);
-                }
-
-                $closeRequested = $this->request->getPost('close_session') === '1';
-
-                if (!$is_admin && !$closeRequested) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'La modification d\'une session ouverte est réservée à l\'administrateur.', 'id' => $cashup_id]);
-                }
-
-                if ($closeRequested && !$is_admin && !$is_owner) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Vous ne pouvez fermer que votre propre session.', 'id' => $cashup_id]);
-                }
-            }
-        }
-
-
-            if ($this->cashup->has_open_cashup($logged_in_employee->person_id)) {
-                $data['open_cashup_warning'] = 'Une session de caisse est déjà ouverte.';
-            }
-
-            $cash_ups_info->open_date = date('Y-m-d H:i:s');
-            $cash_ups_info->close_date = null;
-            $cash_ups_info->open_employee_id = $logged_in_employee->person_id;
-            $cash_ups_info->close_employee_id = null;
-            $cash_ups_info->status = 0;
-        }
-        // If all the amounts are null or 0 that means it's a close cashup
-        elseif (
-            floatval($cash_ups_info->closed_amount_cash) == 0
-            && floatval($cash_ups_info->closed_amount_due) == 0
-            && floatval($cash_ups_info->closed_amount_card) == 0
-            && floatval($cash_ups_info->closed_amount_check) == 0
-        ) {
-            // Set the close date and time to the actual as this is a close session
-            $cash_ups_info->close_date = date('Y-m-d H:i:s');
-
-            // The closed amount starts with the open amount -/+ any trasferred amount
-            $cash_ups_info->closed_amount_cash = $cash_ups_info->open_amount_cash + $cash_ups_info->transfer_amount_cash;
-
-            if ($cash_ups_info->cashup_id != NEW_ENTRY && $this->cashup->has_linked_sales($cash_ups_info->cashup_id)) {
-                $totals = $this->cashup->get_linked_payment_totals($cash_ups_info->cashup_id);
-                $cash_ups_info->closed_amount_cash += $totals['cash'];
-                $cash_ups_info->closed_amount_due += $totals['due'];
-                $cash_ups_info->closed_amount_card += $totals['card'];
-                $cash_ups_info->closed_amount_check += $totals['check'];
-            } else {
-                // If it's date mode only and not date & time truncate the open and end date to date only
-                if (empty($this->config['date_or_time_format'])) {
-                    if ($cash_ups_info->open_date != null) {
-                        $start_date = substr($cash_ups_info->open_date, 0, 10);
-                    } else {
-                        $start_date = null;
-                    }
-                    if ($cash_ups_info->close_date != null) {
-                        $end_date = substr($cash_ups_info->close_date, 0, 10);
-                    } else {
-                        $end_date = null;
-                    }
-                    // Search for all the payments given the time range
-                    $inputs = [
-                        'start_date'  => $start_date,
-                        'end_date'    => $end_date,
-                        'sale_type'   => 'complete',
-                        'location_id' => 'all'
-                    ];
-                } else {
-                    // Search for all the payments given the time range
-                    $inputs = [
-                        'start_date'  => $cash_ups_info->open_date,
-                        'end_date'    => $cash_ups_info->close_date,
-                        'sale_type'   => 'complete',
-                        'location_id' => 'all'
-                    ];
-                }
-
-                // Get all the transactions payment summaries
-                $reports_data = $this->summary_payments->getData($inputs);
-
-                foreach ($reports_data as $row) {
-                    if ($row['trans_group'] == lang('Reports.trans_payments')) {
-                        if ($row['trans_type'] == lang('Sales.cash')) {
-                            $cash_ups_info->closed_amount_cash += $row['trans_amount'];
-                        } elseif ($row['trans_type'] == lang('Sales.due')) {
-                            $cash_ups_info->closed_amount_due += $row['trans_amount'];
-                        } elseif (
-                            $row['trans_type'] == lang('Sales.debit') ||
-                            $row['trans_type'] == lang('Sales.credit')
-                        ) {
-                            $cash_ups_info->closed_amount_card += $row['trans_amount'];
-                        } elseif ($row['trans_type'] == lang('Sales.check')) {
-                            $cash_ups_info->closed_amount_check += $row['trans_amount'];
-                        }
-                    }
-                }
-            }
-
-            // Lookup expenses paid in cash
-            $filters = [
-                'start_date' => $cash_ups_info->open_date,
-                'end_date'   => $cash_ups_info->close_date,
-                'is_deleted' => false
-            ];
-            $filters = [
-                'only_cash'   => true,
-                'only_due'    => false,
-                'only_check'  => false,
-                'only_credit' => false,
-                'only_debit'  => false,
-                'is_deleted'  => false
-            ];
-
-            $payments = $this->expense->get_payments_summary('', array_merge($inputs, $filters));
-
-            foreach ($payments as $row) {
-                $cash_ups_info->closed_amount_cash -= $row['amount'];
-            }
-
-            $cash_ups_info->closed_amount_total = $this->_calculate_total($cash_ups_info->open_amount_cash, $cash_ups_info->transfer_amount_cash, $cash_ups_info->closed_amount_cash, $cash_ups_info->closed_amount_due, $cash_ups_info->closed_amount_card, $cash_ups_info->closed_amount_check);
-        }
-
-        $data['cash_ups_info'] = $cash_ups_info;
-
-        return view("cashups/form", $data);
+        return view('cashups/form', [
+            'cash_ups_info' => $cashup,
+            'employees' => $employees,
+            'is_admin' => $isAdmin,
+            'can_close' => $isOpen && ($isAdmin || (int) $cashup->open_employee_id === $employeeId),
+            'config' => $this->config
+        ]);
     }
 
     /**
@@ -264,84 +157,75 @@ class Cashups extends Secure_Controller
             return $this->response->setJSON(['success' => false, 'message' => 'Les sessions de caisse s\'ouvrent depuis Ventes.', 'id' => NEW_ENTRY]);
         }
 
-
-        // Prevent modifying an already closed session.
-        if ($cashup_id !== NEW_ENTRY && $this->cashup->is_closed($cashup_id)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Cette session de caisse est fermée et ne peut plus être modifiée.', 'id' => $cashup_id]);
-        }
-
-        // Prevent opening a second session for the same employee.
-        if ($cashup_id === NEW_ENTRY && $this->cashup->has_open_cashup($logged_in_employee->person_id)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Une session de caisse est déjà ouverte pour cet employé.', 'id' => NEW_ENTRY]);
-        }
-
+        $loggedIn = $this->employee->get_logged_in_employee_info();
+        $employeeId = (int) $loggedIn->person_id;
+        $isAdmin = $this->employee->isAdmin($employeeId);
         $existing = $this->cashup->get_info($cashup_id);
 
-        $open_amount_cash     = parse_decimals($this->request->getPost('open_amount_cash'));
-        $transfer_amount_cash = parse_decimals($this->request->getPost('transfer_amount_cash'));
-        $closed_amount_cash   = parse_decimals($this->request->getPost('closed_amount_cash'));
-        $closed_amount_due    = parse_decimals($this->request->getPost('closed_amount_due'));
-        $closed_amount_card   = parse_decimals($this->request->getPost('closed_amount_card'));
-        $closed_amount_check  = parse_decimals($this->request->getPost('closed_amount_check'));
+        if (empty($existing->cashup_id) || (int) $existing->cashup_id !== $cashup_id) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Session de caisse introuvable.', 'id' => $cashup_id]);
+        }
 
-        $existing = $this->cashup->get_info($cashup_id);
-
-        $transfer_amount_cash = parse_decimals($this->request->getPost('transfer_amount_cash'));
-        $closed_amount_cash   = parse_decimals($this->request->getPost('closed_amount_cash'));
-        $closed_amount_due    = parse_decimals($this->request->getPost('closed_amount_due'));
-        $closed_amount_card   = parse_decimals($this->request->getPost('closed_amount_card'));
-        $closed_amount_check  = parse_decimals($this->request->getPost('closed_amount_check'));
-
+        $isOpen = isset($existing->status) && (int) $existing->status === 0;
         $closeRequested = $this->request->getPost('close_session') === '1';
-        $is_closed = $closeRequested
-            || (float) $closed_amount_cash !== 0.0
-            || (float) $closed_amount_due !== 0.0
-            || (float) $closed_amount_card !== 0.0
-            || (float) $closed_amount_check !== 0.0;
 
-        // Preserve opening values from the database.
-        $open_date = !empty($existing->open_date) ? $existing->open_date : date('Y-m-d H:i:s');
-        $open_employee_id = !empty($existing->open_employee_id) ? (int) $existing->open_employee_id : $logged_in_employee->person_id;
-        $open_amount_cash = (float) $existing->open_amount_cash;
-
-        $close_date = null;
-        $close_employee_id = null;
-
-        if ($is_closed) {
-            $close_date = date('Y-m-d H:i:s');
-            $close_employee_id = $logged_in_employee->person_id;
-        } elseif (!empty($existing->close_date)) {
-            $close_date = $existing->close_date;
-            $close_employee_id = $existing->close_employee_id;
+        if (!$isAdmin) {
+            if (!$isOpen || (int) $existing->open_employee_id !== $employeeId || !$closeRequested) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Vous pouvez uniquement fermer votre propre session ouverte.', 'id' => $cashup_id]);
+            }
+        } elseif (!$isOpen && !$isAdmin) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Session fermée.', 'id' => $cashup_id]);
         }
 
-        $cash_up_data = [
-            'open_date'            => $open_date,
-            'close_date'           => $close_date,
-            'open_amount_cash'     => $open_amount_cash,
-            'transfer_amount_cash' => $transfer_amount_cash,
-            'closed_amount_cash'   => $closed_amount_cash,
-            'closed_amount_due'    => $closed_amount_due,
-            'closed_amount_card'   => $closed_amount_card,
-            'closed_amount_check'  => $closed_amount_check,
-            'closed_amount_total'  => $this->_calculate_total($open_amount_cash, $transfer_amount_cash, $closed_amount_due, $closed_amount_cash, $closed_amount_card, $closed_amount_check),
-            'note'                 => $this->request->getPost('note') != null,
-            'description'          => $this->request->getPost('description', FILTER_SANITIZE_SPECIAL_CHARS),
-            'open_employee_id'     => $open_employee_id,
-            'close_employee_id'    => $close_employee_id,
-            'deleted'              => $this->request->getPost('deleted') != null,
-            'status'               => $is_closed ? 1 : 0,
+        // Les valeurs d'ouverture sont immuables pour un caissier et restent issues de la base.
+        $openDate = $isAdmin && $this->request->getPost('open_date')
+            ? $this->request->getPost('open_date') : $existing->open_date;
+        $openEmployeeId = $isAdmin && $this->request->getPost('open_employee_id')
+            ? (int) $this->request->getPost('open_employee_id') : (int) $existing->open_employee_id;
+        $openAmountCash = $isAdmin && $this->request->getPost('open_amount_cash') !== null
+            ? parse_decimals($this->request->getPost('open_amount_cash')) : (float) $existing->open_amount_cash;
+
+        $transferAmountCash = $isAdmin
+            ? parse_decimals($this->request->getPost('transfer_amount_cash'))
+            : (float) $existing->transfer_amount_cash;
+
+        $closedAmountCash = parse_decimals($this->request->getPost('closed_amount_cash'));
+        $closedAmountDue = parse_decimals($this->request->getPost('closed_amount_due'));
+        $closedAmountCard = parse_decimals($this->request->getPost('closed_amount_card'));
+        $closedAmountCheck = parse_decimals($this->request->getPost('closed_amount_check'));
+
+        $closing = $isOpen && $closeRequested;
+        $cashupData = [
+            'open_date' => $openDate,
+            'open_employee_id' => $openEmployeeId,
+            'open_amount_cash' => $openAmountCash,
+            'transfer_amount_cash' => $transferAmountCash,
+            'closed_amount_cash' => $closedAmountCash,
+            'closed_amount_due' => $closedAmountDue,
+            'closed_amount_card' => $closedAmountCard,
+            'closed_amount_check' => $closedAmountCheck,
+            'closed_amount_total' => $this->_calculate_total($openAmountCash, $transferAmountCash, $closedAmountDue, $closedAmountCash, $closedAmountCard, $closedAmountCheck),
+            'note' => $this->request->getPost('note') !== null,
+            'description' => $this->request->getPost('description', FILTER_SANITIZE_SPECIAL_CHARS),
+            'deleted' => $isAdmin && $this->request->getPost('deleted') !== null ? 1 : (int) $existing->deleted,
+            'status' => $closing ? 1 : (int) $existing->status,
+            'close_date' => $closing ? date('Y-m-d H:i:s') : $existing->close_date,
+            'close_employee_id' => $closing ? $employeeId : $existing->close_employee_id
         ];
 
-        if ($this->cashup->save_value($cash_up_data, $cashup_id)) {
-            if ($cashup_id == NEW_ENTRY) {
-                return $this->response->setJSON(['success' => true, 'message' => lang('Cashups.successful_adding'), 'id' => $cash_up_data['cashup_id']]);
-            } else {
-                return $this->response->setJSON(['success' => true, 'message' => lang('Cashups.successful_updating'), 'id' => $cashup_id]);
-            }
-        } else {
-            return $this->response->setJSON(['success' => false, 'message' => lang('Cashups.error_adding_updating'), 'id' => NEW_ENTRY]);
+        if (!$isAdmin && !$closing) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Action non autorisée.', 'id' => $cashup_id]);
         }
+
+        if ($this->cashup->save_value($cashupData, $cashup_id)) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $closing ? 'Caisse clôturée avec succès.' : lang('Cashups.successful_updating'),
+                'id' => $cashup_id
+            ]);
+        }
+
+        return $this->response->setJSON(['success' => false, 'message' => lang('Cashups.error_adding_updating'), 'id' => $cashup_id]);
     }
 
     /**
