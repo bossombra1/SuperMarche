@@ -12,6 +12,45 @@
 
 <?= view('partial/header') ?>
 
+<style>
+/* Mise en page limitée à la liste des caisses. */
+#table_holder .fixed-table-container { overflow-x: hidden; }
+#table_holder .fixed-table-body { overflow-x: hidden; }
+#table_holder table { width: 100% !important; table-layout: fixed; }
+#table_holder th, #table_holder td {
+    padding: 6px 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    vertical-align: middle;
+    font-size: 12px;
+}
+#table_holder th[data-field="state"],
+#table_holder td.bs-checkbox { width: 28px !important; min-width: 28px; }
+#table_holder th[data-field="cashup_id"] { width: 42px !important; }
+#table_holder th[data-field="open_date"],
+#table_holder th[data-field="close_date"] { width: 9% !important; }
+#table_holder th[data-field="open_employee_id"],
+#table_holder th[data-field="close_employee_id"] { width: 9% !important; }
+#table_holder th[data-field="open_amount_cash"],
+#table_holder th[data-field="transfer_amount_cash"],
+#table_holder th[data-field="closed_amount_cash"],
+#table_holder th[data-field="closed_amount_due"],
+#table_holder th[data-field="closed_amount_card"],
+#table_holder th[data-field="closed_amount_check"],
+#table_holder th[data-field="closed_amount_total"] { width: 7% !important; }
+#table_holder th[data-field="note"] { width: 4% !important; }
+#table_holder th[data-field="close_action"],
+#table_holder th[data-field="edit"] { width: 54px !important; }
+#table_holder td[data-field="close_action"],
+#table_holder td[data-field="edit"] { padding-left: 2px; padding-right: 2px; text-align: center; }
+#table_holder td[data-field="close_action"] a { white-space: nowrap; font-size: 11px; }
+@media (max-width: 767px) {
+    #table_holder .fixed-table-container,
+    #table_holder .fixed-table-body { overflow-x: auto; }
+    #table_holder table { min-width: 1050px; }
+}
+</style>
+
 <script type="text/javascript">
     $(document).ready(function() {
         $('#filters').on('hidden.bs.select', function(e) {
