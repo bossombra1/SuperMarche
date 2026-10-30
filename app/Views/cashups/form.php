@@ -114,7 +114,7 @@ $closeMode = !empty($close_mode);
                         'name'  => 'close_date',
                         'id'    => 'close_date',
                         'class' => 'form-control input-sm datepicker',
-                        'value' => to_datetime(strtotime($cash_ups_info->close_date))
+                        'value' => !empty($cash_ups_info->close_date) ? to_datetime(strtotime($cash_ups_info->close_date)) : ''
                     ]) ?>
                 </div>
             </div>
@@ -123,7 +123,7 @@ $closeMode = !empty($close_mode);
         <div class="form-group form-group-sm">
             <?= form_label(lang('Cashups.close_employee'), 'close_employee', ['class' => 'control-label col-xs-3']) ?>
             <div class="col-xs-6">
-                <?= form_dropdown('close_employee_id', $employees, $cash_ups_info->close_employee_id, 'id="close_employee_id" class="form-control"') ?>
+                <?= form_dropdown('close_employee_id', [0 => '—'] + $employees, $cash_ups_info->close_employee_id ?? 0, 'id="close_employee_id" class="form-control"') ?>
             </div>
         </div>
 
