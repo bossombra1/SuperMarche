@@ -4,12 +4,13 @@ LABEL maintainer="jekkos"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu-dev \
     libgd-dev \
-    && docker-php-ext-install mysqli bcmath intl gd \
+    libxml2-dev \
+    && docker-php-ext-install mysqli bcmath intl gd dom \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && a2enmod rewrite
 
-RUN echo "date.timezone = \"\${PHP_TIMEZONE}\"" > /usr/local/etc/php/conf.d/timezone.ini
+RUN echo "date.timezone = Africa/Abidjan" > /usr/local/etc/php/conf.d/timezone.ini
 
 WORKDIR /app
 COPY --chown=www-data:www-data . /app

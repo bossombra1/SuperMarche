@@ -1,0 +1,60 @@
+services:
+  ospos:
+    command: ["sh", "-c", "php spark env:provision && exec apache2-foreground"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ospos
+    container_name: supermarche-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:80"
+    networks:
+      - supermarche-net
+    volumes:
+      - uploads:/app/public/uploads
+      - logs:/app/writable/logs
+      - type: bind
+        source: ./.env.docker.runtime
+	target: /app/.env
+        bind:
+          create_host_path: false
+    environment:
+      CI_ENVIRONMENT: production
+      ALLOWED_HOSTNAMES: localhost:8081,127.0.0.1:8081
+      FORCE_HTTPS: "false"
+      PHP_TIMEZONE: Africa/Abidjan
+      MYSQL_USERNAME: supermarche
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB_NAME: supermarche
+      MYSQL_HOST_NAME: mysql
+
+  mysql:
+    image: mariadb:10.11
+    container_name: supermarche-db
+    restart: unless-stopped
+    networks:
+      - supermarche-net
+    volumes:
+      - supermarche-db:/var/lib/mysql
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MARIADB_DATABASE: supermarche
+      MARIADB_USER: supermarche
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  uploads:
+  logs:
+  supermarche-db:
+
+networks:
+  supermarche-net:
