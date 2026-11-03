@@ -1,3 +1,50 @@
+include:
+    - docker/docker-mysql.yml
+
+services:
+    ospos:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: ospos
+        image: supermarche-ospos:local
+        restart: always
+        depends_on:
+            - mysql
+        ports:
+            - "8081:80"
+        networks:
+            - app_net
+        command: ["apache2-foreground"]
+        volumes:
+            # .env holds the two runtime-generated secrets (encryption.key +
+            # throttle.key), persisted as a single host file so the same keys
+            # survive container recreation (a named volume is a directory and
+            # forces .env to be a directory, breaking atomicWriteFile's rename).
+            # create_host_path is explicitly false so a missing host file fails
+            # startup instead of being auto-created as a directory (see docs/INSTALL.md).
+            - type: bind
+              source: ./.env
+              target: /app/.env
+              read_only: true
+              bind:
+                  create_host_path: false
+            - uploads:/app/public/uploads
+            - logs:/app/writable/logs
+        environment:
+            - CI_ENVIRONMENT=production
+            - ALLOWED_HOSTNAMES=localhost
+            - FORCE_HTTPS=false
+            - PHP_TIMEZONE=UTC
+            - MYSQL_USERNAME=admin
+            - MYSQL_PASSWORD=pointofsale
+            - MYSQL_DB_NAME=ospos
+            - MYSQL_HOST_NAME=mysql
+            # Stable secrets are supplied by .env.docker and override .env.
+            - ENCRYPTION_KEY=${OSPOS_ENCRYPTION_KEY:?Set OSPOS_ENCRYPTION_KEY in .env.docker}
+            - THROTTLE_KEY=${OSPOS_THROTTLE_KEY:?Set OSPOS_THROTTLE_KEY in .env.docker}
+
+=======
 ﻿services:
   ospos:
     command: ["sh", "-c", "cp /run/config/.env.docker.runtime /app/.env && chmod 666 /app/.env && php spark env:provision && exec apache2-foreground"]

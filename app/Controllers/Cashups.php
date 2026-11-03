@@ -90,6 +90,8 @@ class Cashups extends Secure_Controller
         $loggedIn = $this->employee->get_logged_in_employee_info();
         $employeeId = (int) $loggedIn->person_id;
         $isAdmin = $this->employee->isAdmin($employeeId);
+        $closeMode = $this->request->getGet('mode') === 'close'
+            || str_contains($this->request->getUri()->getQuery(), 'mode=close');
 
         $cashup = $this->cashup->get_info($cashup_id);
         $isNew = ($cashup_id === NEW_ENTRY || (int) ($cashup->cashup_id ?? NEW_ENTRY) === NEW_ENTRY);
@@ -135,7 +137,8 @@ class Cashups extends Secure_Controller
             'employees' => $employees,
             'is_admin' => $isAdmin,
             'can_close' => $isOpen && ($isAdmin || (int) $cashup->open_employee_id === $employeeId),
-            'close_mode' => $this->request->getGet('mode') === 'close',
+            'close_mode' => $closeMode,
+            'current_employee_id' => $employeeId,
             'config' => $this->config
         ]);
     }
@@ -177,6 +180,7 @@ class Cashups extends Secure_Controller
 
         $isOpen = isset($existing->status) && (int) $existing->status === 0;
         $closeRequested = $this->request->getPost('close_session') === '1';
+        $closing = $isOpen && $closeRequested;
 
         if (!$isAdmin) {
             if (!$isOpen || (int) $existing->open_employee_id !== $employeeId || !$closeRequested) {
@@ -189,7 +193,7 @@ class Cashups extends Secure_Controller
         // Les valeurs d'ouverture sont immuables pour un caissier et restent issues de la base.
         $openDate = $isAdmin && $this->request->getPost('open_date')
             ? $this->request->getPost('open_date') : $existing->open_date;
-        $openEmployeeId = $isAdmin && $this->request->getPost('open_employee_id')
+        $openEmployeeId = $isAdmin && !$closing && $this->request->getPost('open_employee_id')
             ? (int) $this->request->getPost('open_employee_id') : (int) $existing->open_employee_id;
         $openAmountCash = $isAdmin && $this->request->getPost('open_amount_cash') !== null
             ? parse_decimals($this->request->getPost('open_amount_cash')) : (float) $existing->open_amount_cash;
@@ -203,7 +207,10 @@ class Cashups extends Secure_Controller
         $closedAmountCard = parse_decimals($this->request->getPost('closed_amount_card'));
         $closedAmountCheck = parse_decimals($this->request->getPost('closed_amount_check'));
 
-        $closing = $isOpen && $closeRequested;
+        $requestedCloseEmployeeId = (int) $this->request->getPost('close_employee_id');
+        $closeEmployeeId = $isAdmin && $requestedCloseEmployeeId > 0 && $this->employee->exists($requestedCloseEmployeeId)
+            ? $requestedCloseEmployeeId
+            : $employeeId;
         $cashupData = [
             'open_date' => $openDate,
             'open_employee_id' => $openEmployeeId,
@@ -219,7 +226,7 @@ class Cashups extends Secure_Controller
             'deleted' => $isAdmin && $this->request->getPost('deleted') !== null ? 1 : (int) $existing->deleted,
             'status' => $closing ? 1 : (int) $existing->status,
             'close_date' => $closing ? date('Y-m-d H:i:s') : $existing->close_date,
-            'close_employee_id' => $closing ? $employeeId : $existing->close_employee_id
+            'close_employee_id' => $closing ? $closeEmployeeId : $existing->close_employee_id
         ];
 
         if (!$isAdmin && !$closing) {
