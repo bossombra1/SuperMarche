@@ -4,6 +4,7 @@
  * @var array $employees
  * @var string $controller_name
  * @var array $config
+ * @var int $current_employee_id
  */
 ?>
 
@@ -17,6 +18,8 @@ $isOpenCashup = !$isNewCashup && !$isClosedCashup;
 $isAdmin = !empty($is_admin);
 $canClose = !empty($can_close) && $isOpenCashup;
 $closeMode = !empty($close_mode);
+$closingForm = $isOpenCashup && $closeMode;
+$currentEmployeeId = (int) ($current_employee_id ?? 0);
 ?>
 
 <?= form_open('cashups/save/' . $cash_ups_info->cashup_id, ['id' => 'cashups_edit_form', 'class' => 'form-horizontal'])    // TODO: String Interpolation ?>
@@ -58,7 +61,12 @@ $closeMode = !empty($close_mode);
         <div class="form-group form-group-sm">
             <?= form_label(lang('Cashups.open_employee'), 'open_employee', ['class' => 'control-label col-xs-3']) ?>
             <div class="col-xs-6">
-                <?= form_dropdown('open_employee_id', $employees, $cash_ups_info->open_employee_id, 'id="open_employee_id" class="form-control"') ?>
+                <?php if ($closingForm): ?>
+                    <?= form_dropdown('open_employee_id_display', $employees, $cash_ups_info->open_employee_id, 'id="open_employee_id" class="form-control" disabled') ?>
+                    <?= form_hidden('open_employee_id', (string) $cash_ups_info->open_employee_id) ?>
+                <?php else: ?>
+                    <?= form_dropdown('open_employee_id', $employees, $cash_ups_info->open_employee_id, 'id="open_employee_id" class="form-control"') ?>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -111,10 +119,13 @@ $closeMode = !empty($close_mode);
                         <span class="glyphicon glyphicon-calendar"></span>
                     </span>
                     <?= form_input([
-                        'name'  => 'close_date',
-                        'id'    => 'close_date',
-                        'class' => 'form-control input-sm datepicker',
-                        'value' => !empty($cash_ups_info->close_date) ? to_datetime(strtotime($cash_ups_info->close_date)) : ''
+                        'name'     => 'close_date',
+                        'id'       => 'close_date',
+                        'class'    => 'form-control input-sm datepicker',
+                        'readonly' => $closingForm ? 'readonly' : null,
+                        'value'    => $closingForm
+                            ? to_datetime(time())
+                            : (!empty($cash_ups_info->close_date) ? to_datetime(strtotime($cash_ups_info->close_date)) : '')
                     ]) ?>
                 </div>
             </div>
@@ -123,7 +134,22 @@ $closeMode = !empty($close_mode);
         <div class="form-group form-group-sm">
             <?= form_label(lang('Cashups.close_employee'), 'close_employee', ['class' => 'control-label col-xs-3']) ?>
             <div class="col-xs-6">
-                <?= form_dropdown('close_employee_id', [0 => '—'] + $employees, $cash_ups_info->close_employee_id ?? 0, 'id="close_employee_id" class="form-control"') ?>
+                <?php if ($closingForm && !$isAdmin): ?>
+                    <?= form_input([
+                        'id'       => 'close_employee_display',
+                        'class'    => 'form-control',
+                        'readonly' => 'readonly',
+                        'value'    => $employees[$currentEmployeeId] ?? ''
+                    ]) ?>
+                    <?= form_hidden('close_employee_id', (string) $currentEmployeeId) ?>
+                <?php else: ?>
+                    <?= form_dropdown(
+                        'close_employee_id',
+                        [0 => '—'] + $employees,
+                        $closingForm ? $currentEmployeeId : ($cash_ups_info->close_employee_id ?? 0),
+                        'id="close_employee_id" class="form-control"'
+                    ) ?>
+                <?php endif; ?>
             </div>
         </div>
 
